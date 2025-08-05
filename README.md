@@ -2,33 +2,41 @@
 
 This repository contains the software for the Material Outgassing Test Rig Data Logger. This system is designed to monitor and log various parameters during material outgassing tests.
 
+## Virtual Environment Setup
+
+To set up a virtual environment for this project, follow these steps:
+
+1. **Create a Virtual Environment:**
+
+   ```sh
+   python -m venv venv
+   ```
+
+2. **Activate the Virtual Environment:**
+  
+    ```sh
+    venv\Scripts\activate
+    ```
+
+3. **Install Required Packages:**
+
+   ```sh
+   pip install -r requirements.txt
+   ```
+
 ## Keithley Multiplexer Setup
 
+[Documentation](https://www.tek.com/en/search?keywords=2000&facets=_templatename%3dmanual&sort=desc) of Keithley Multiplexer 2000
+
 * **Install Keysight IO** you can download the latest version of the Keysight I/O from the [Keysight website](https://www.keysight.com/us/en/lib/software-detail/computer-software/io-libraries-suite-downloads-2175637.html). This software is essential for communicating with Keithley instruments.
+  * Install "IO library" and leave everything at default settings.
+  * open the "Connection Expert" and add the Keithley instrument.
+  * Make sure to select the correct communication port (e.g., COM1, COM2, GPIB, Serial) and configure the settings according to your instrument's specifications.
+  * You might have to install the driver for the connection adapter (e.g., [UPort1150](https://www.moxa.com/en/products/industrial-edge-connectivity/usb-to-serial-converters-usb-hubs/usb-to-serial-converters/uport-1100-series#resources)).
+* Once the connection is established, you can test the communication by running following command in the terminal:
+  
+    ```sh
+    python -c "import pyvisa; print(pyvisa.ResourceManager().list_resources())"
+    ```
 
-## Hardware Requirements
-
-* **[Specify Microcontroller/SBC]:** e.g., Arduino Uno, Raspberry Pi, ESP32
-* **Pressure Transducers:** e.g., [Specify model/type]
-* **Temperature Sensors:** e.g., PT100, Thermocouples (with appropriate amplifiers)
-* **Display (Optional):** e.g., LCD, OLED
-* **SD Card Module (for logging):** If data is stored locally
-* **Power Supply:** Appropriate for all components
-
-## Software Requirements
-
-* **Arduino IDE / PlatformIO:** For flashing the microcontroller code.
-* **Python 3.x:** For the data logging and visualization application (if applicable).
-* **Required Python Libraries:** (e.g., `pyserial`, `matplotlib`, `pandas`, `tkinter` for GUI)
-
-## Installation and Setup
-
-### 1. Hardware Assembly
-
-Follow the wiring diagrams and schematics provided in the `hardware/` directory (if available) to connect all sensors and components to the microcontroller.
-
-### 2. Microcontroller Code
-
-1. **Open the Project:** Open the `firmware/` directory in your Arduino IDE or PlatformIO.
-2. **Install Libraries:** Ensure you have all necessary libraries installed. Check the `firmware/firmware.ino` (or equivalent) file for `#include` statements and install any missing libraries via the Arduino IDE Library Manager or PlatformIO's library management.
-    * Example libraries: `Adafruit_Sensor`, `Adafruit_BME280`, `SD`, `RTClib`
+    the output should include the address of your Keithley instrument (e.g., `('ASRL1::INSTR',)`).
