@@ -11,9 +11,7 @@ class Application(tk.Tk):
         self.title("Measurement Control")
         self.geometry("800x600")
 
-        self.rm = pyvisa.ResourceManager(
-            "@py"
-        )  # Initialize PyVISA Resource Manager with pyvisa-py backend
+        self.rm = pyvisa.ResourceManager()
         self.instruments = self.get_instruments()
         self.psus = self.get_power_supplies()
         self.num_channels = 4  # Example number of channels
