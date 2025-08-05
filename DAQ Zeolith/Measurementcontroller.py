@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Aug 23 22:30:20 2024
-
-@author: labor
-"""
 import keithley_measurement as instr
 import power_supply_control as psu
 
