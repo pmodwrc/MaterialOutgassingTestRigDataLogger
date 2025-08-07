@@ -16,8 +16,7 @@ class KeithleyMeasurement:
         print("Connected Instruments:")
         for idx, instrument in enumerate(instruments):
             print(f"{idx}: {instrument}")
-
-        """Prompt the user to select an instrument by its index."""
+        """Prompt the user to select an instrument by its index if there is more than one."""
         if len(instruments) == 1:
             resource_name = instruments[0]
             print(f"Only one instrument found. Connecting to: {resource_name}")
@@ -38,11 +37,9 @@ class KeithleyMeasurement:
                         )
                 except ValueError:
                     print("Invalid input. Please enter a valid number.")
-
         try:
             self.keithley = self.rm.open_resource(resource_name)
             self.keithley.timeout = 5000
-
             idn_string = self.keithley.query("*IDN?")
             print(f"Connected to: {idn_string.strip()}")
         except Exception as e:
@@ -78,6 +75,7 @@ class KeithleyMeasurement:
     def measure_value(self, config):
         try:
             response = self.keithley.query("READ?")
+            print(f"Measurement response: {response}")
             # Remove non-numeric and non-standard characters
             cleaned = "".join(c for c in response if c in "0123456789.-eE+")
             value = float(cleaned)
@@ -138,11 +136,11 @@ if __name__ == "__main__":
     rm = pyvisa.ResourceManager()
     inst = KeithleyMeasurement(rm)
     inst.connect()
-    inst.set_channelConfiguration(0, "Resistance")
-    inst.set_channelConfiguration(1, "Resistance")
-    inst.set_channelConfiguration(2, "Resistance")
-    inst.set_channelConfiguration(3, "Resistance")
-    inst.set_channelConfiguration(4, "Resistance")
+    # inst.set_channelConfiguration(0, "Resistance")
+    # inst.set_channelConfiguration(1, "Resistance")
+    # inst.set_channelConfiguration(2, "Resistance")
+    # inst.set_channelConfiguration(3, "Resistance")
+    # inst.set_channelConfiguration(4, "Resistance")
     inst.configure(1)
     value = inst.measure_value("Resistance")
     print(value)
