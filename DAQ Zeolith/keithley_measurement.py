@@ -47,8 +47,11 @@ class KeithleyMeasurement:
             self.keithley = None
 
     def set_channelConfiguration(self, CHnbr, config):
-        # CHnbr: int    0 to 2
-        # config string { Voltage, Current, Resistance, NTC_44006, NTC44007}
+        """
+        CHnbr: int    0 to 2
+
+        config string { Voltage, Current, Resistance, NTC_44006, NTC44007}
+        """
         self.channels[CHnbr] = config
 
     def get_channelConfiguration(self):
@@ -59,12 +62,17 @@ class KeithleyMeasurement:
     def configure(self, function):
         """Configure a specific channel based on the selected setting."""
         self.config = function
+        print(f"Configuring channel {self.config}")
         if self.config == "Voltage":
             self.keithley.write("CONF:VOLT:DC")
         if self.config == "Current":
             self.keithley.write("CONF:CURR:DC")
         if self.config == "Resistance":
             self.keithley.write("CONF:RES")
+        else:
+            print(f"Configuration {self.config} not recognized. Defaulting to Resistance.")
+            self.keithley.write("CONF:RES")
+        return
 
     def open_channel(self, channel):
         self.keithley.write("ROUT:OPEN:ALL")  # Open all channels
@@ -136,11 +144,12 @@ if __name__ == "__main__":
     rm = pyvisa.ResourceManager()
     inst = KeithleyMeasurement(rm)
     inst.connect()
-    # inst.set_channelConfiguration(0, "Resistance")
-    # inst.set_channelConfiguration(1, "Resistance")
-    # inst.set_channelConfiguration(2, "Resistance")
-    # inst.set_channelConfiguration(3, "Resistance")
-    # inst.set_channelConfiguration(4, "Resistance")
+    inst.set_channelConfiguration(0, "Resistance")
+    inst.set_channelConfiguration(1, "Voltage")
+    inst.set_channelConfiguration(2, "Resistance")
+    inst.set_channelConfiguration(3, "Resistance")
+    inst.set_channelConfiguration(4, "Resistance")
+    print(f"Channel configurations: {inst.get_channelConfiguration()}")
     inst.configure(1)
     value = inst.measure_value("Resistance")
     print(value)
