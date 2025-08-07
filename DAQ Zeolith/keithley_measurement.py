@@ -6,9 +6,10 @@ import time
 class KeithleyMeasurement:
     def __init__(self, rm):
         self.rm = rm
-        self.channels = ["", "", "", "", "", "", ""]
+        self.channels = [""] * 10
 
     def connect(self):
+        """Connect to the Keithley instrument using PyVISA."""
         instruments = self.rm.list_resources()
         if not instruments:
             print("No instruments found!")
@@ -48,29 +49,31 @@ class KeithleyMeasurement:
 
     def set_channelConfiguration(self, CHnbr, config):
         """
-        CHnbr: int    0 to 2
+        CHnbr: int    0 to 10
 
         config string { Voltage, Current, Resistance, NTC_44006, NTC44007}
         """
         self.channels[CHnbr] = config
 
-    def get_channelConfiguration(self):
-        # CHnbr: int    0 to 2
-        # config string { Voltage, Current, Resistance, NTC_44006, NTC44007}
-        return self.channels
+    def get_channelConfiguration(self, CHnbr=None):
+        """CHnbr: int    0 to 9 or None to get all configurations"""
+        if CHnbr is None:
+            return self.channels
+        else:
+            return self.channels[CHnbr]
 
-    def configure(self, function):
+    def configure(self, channel):
         """Configure a specific channel based on the selected setting."""
-        self.config = function
-        print(f"Configuring channel {self.config}")
-        if self.config == "Voltage":
+        function = self.channels[channel - 1]
+        print(f"Configuring channel {channel} with {function}")
+        if function == "Voltage":
             self.keithley.write("CONF:VOLT:DC")
-        if self.config == "Current":
+        elif function == "Current":
             self.keithley.write("CONF:CURR:DC")
-        if self.config == "Resistance":
+        elif function == "Resistance":
             self.keithley.write("CONF:RES")
         else:
-            print(f"Configuration {self.config} not recognized. Defaulting to Resistance.")
+            print(f"Configuration {function} not recognized. Defaulting to Resistance.")
             self.keithley.write("CONF:RES")
         return
 
@@ -80,7 +83,7 @@ class KeithleyMeasurement:
         self.keithley.write(f"ROUT:CLOS (@{channel})")  # Close the specific channel
         return
 
-    def measure_value(self, config):
+    def measure_value(self):
         try:
             response = self.keithley.query("READ?")
             print(f"Measurement response: {response}")
@@ -149,18 +152,23 @@ if __name__ == "__main__":
     inst.set_channelConfiguration(2, "Resistance")
     inst.set_channelConfiguration(3, "Resistance")
     inst.set_channelConfiguration(4, "Resistance")
+    inst.set_channelConfiguration(5, "Resistance")
+    inst.set_channelConfiguration(6, "Resistance")
+    inst.set_channelConfiguration(7, "Resistance")
+    inst.set_channelConfiguration(8, "Resistance")
+    inst.set_channelConfiguration(9, "Resistance")
     print(f"Channel configurations: {inst.get_channelConfiguration()}")
     inst.configure(1)
-    value = inst.measure_value("Resistance")
+    value = inst.measure_value()
     print(value)
     inst.configure(2)
-    value = inst.measure_value("Resistance")
+    value = inst.measure_value()
     print(value)
     inst.configure(3)
-    value = inst.measure_value("Resistance")
+    value = inst.measure_value()
     print(value)
     inst.configure(4)
-    value = inst.measure_value("Resistance")
+    value = inst.measure_value()
     print(value)
     inst.close()
     rm.close()
