@@ -56,11 +56,11 @@ class KeithleyMeasurement:
         self.channels[CHnbr] = config
 
     def get_channelConfiguration(self, CHnbr=None):
-        """CHnbr: int    0 to 9 or None to get all configurations"""
+        """CHnbr: int    1 to 10 or None to get all configurations"""
         if CHnbr is None:
             return self.channels
         else:
-            return self.channels[CHnbr]
+            return self.channels[CHnbr - 1]
 
     def configure(self, channel):
         """Configure a specific channel based on the selected setting."""
@@ -86,7 +86,6 @@ class KeithleyMeasurement:
     def measure_value(self):
         try:
             response = self.keithley.query("READ?")
-            print(f"Measurement response: {response}")
             # Remove non-numeric and non-standard characters
             cleaned = "".join(c for c in response if c in "0123456789.-eE+")
             value = float(cleaned)
@@ -149,26 +148,20 @@ if __name__ == "__main__":
     inst.connect()
     inst.set_channelConfiguration(0, "Resistance")
     inst.set_channelConfiguration(1, "Voltage")
-    inst.set_channelConfiguration(2, "Resistance")
-    inst.set_channelConfiguration(3, "Resistance")
-    inst.set_channelConfiguration(4, "Resistance")
-    inst.set_channelConfiguration(5, "Resistance")
-    inst.set_channelConfiguration(6, "Resistance")
-    inst.set_channelConfiguration(7, "Resistance")
-    inst.set_channelConfiguration(8, "Resistance")
-    inst.set_channelConfiguration(9, "Resistance")
+    inst.set_channelConfiguration(2, "")
+    inst.set_channelConfiguration(3, "")
+    inst.set_channelConfiguration(4, "")
+    inst.set_channelConfiguration(5, "")
+    inst.set_channelConfiguration(6, "")
+    inst.set_channelConfiguration(7, "")
+    inst.set_channelConfiguration(8, "")
+    inst.set_channelConfiguration(9, "")
     print(f"Channel configurations: {inst.get_channelConfiguration()}")
-    inst.configure(1)
-    value = inst.measure_value()
-    print(value)
-    inst.configure(2)
-    value = inst.measure_value()
-    print(value)
-    inst.configure(3)
-    value = inst.measure_value()
-    print(value)
-    inst.configure(4)
-    value = inst.measure_value()
-    print(value)
+    for chanel in range(1, 10):
+        if inst.get_channelConfiguration(chanel) != "":
+            inst.open_channel(chanel)
+            inst.configure(chanel)
+            value = inst.measure_value()
+            print(f"Channel {chanel}: {value}")
     inst.close()
     rm.close()
