@@ -18,29 +18,36 @@ class KeithleyMeasurement:
             print(f"{idx}: {instrument}")
 
         """Prompt the user to select an instrument by its index."""
-
-        while True:
-            try:
-                index = int(
-                    input(
-                        f"Select an instrument by its index (0-{len(instruments) - 1}): "
+        if len(instruments) == 1:
+            resource_name = instruments[0]
+            print(f"Only one instrument found. Connecting to: {resource_name}")
+        else:
+            while True:
+                try:
+                    index = int(
+                        input(
+                            f"Select an instrument by its index (0-{len(instruments) - 1}): "
+                        )
                     )
-                )
-                if 0 <= index < len(instruments):
-                    resource_name = instruments[index]
-                    break
-                else:
-                    print(
-                        f"Please enter a number between 0 and {len(instruments) - 1}."
-                    )
-            except ValueError:
-                print("Invalid input. Please enter a valid number.")
+                    if 0 <= index < len(instruments):
+                        resource_name = instruments[index]
+                        break
+                    else:
+                        print(
+                            f"Please enter a number between 0 and {len(instruments) - 1}."
+                        )
+                except ValueError:
+                    print("Invalid input. Please enter a valid number.")
 
-        self.keithley = self.rm.open_resource(resource_name)
-        self.keithley.timeout = 5000
+        try:
+            self.keithley = self.rm.open_resource(resource_name)
+            self.keithley.timeout = 5000
 
-        idn_string = self.keithley.query("*IDN?")
-        print(f"Connected to: {idn_string.strip()}")
+            idn_string = self.keithley.query("*IDN?")
+            print(f"Connected to: {idn_string.strip()}")
+        except Exception as e:
+            print(f"Failed to connect to the selected instrument: {e}")
+            self.keithley = None
 
     def set_channelConfiguration(self, CHnbr, config):
         # CHnbr: int    0 to 2
@@ -55,7 +62,6 @@ class KeithleyMeasurement:
     def configure(self, function):
         """Configure a specific channel based on the selected setting."""
         self.config = function
-
         if self.config == "Voltage":
             self.keithley.write("CONF:VOLT:DC")
         if self.config == "Current":
@@ -65,16 +71,18 @@ class KeithleyMeasurement:
 
     def open_channel(self, channel):
         self.keithley.write("ROUT:OPEN:ALL")  # Open all channels
-
         time.sleep(0.1)
         self.keithley.write(f"ROUT:CLOS (@{channel})")  # Close the specific channel
         return
 
     def measure_value(self, config):
         try:
-            value = float(self.keithley.query("READ?"))  # Read value
+            response = self.keithley.query("READ?")
+            # Remove non-numeric and non-standard characters
+            cleaned = "".join(c for c in response if c in "0123456789.-eE+")
+            value = float(cleaned)
             return value
-        except pyvisa.VisaIOError as e:
+        except (pyvisa.VisaIOError, ValueError) as e:
             print(f"Keithley measurement error: {e}")
             return None
 
@@ -118,12 +126,11 @@ class KeithleyMeasurement:
         B	-5.775E-7               -5.775E-7
         C	-4.183E-12              0
         https://www.fluke.com/en-us/learn/tools-calculators/pt100-calculator"""
-        temperature_celsius = 1000000000 # TODO: Implement PT100 calculation
+        temperature_celsius = 1000000000  # TODO: Implement PT100 calculation
         return temperature_celsius
-    
+
     def close(self):
         self.keithley.close()
-
         print("Conection to Instrument closed")
 
 
@@ -136,17 +143,17 @@ if __name__ == "__main__":
     inst.set_channelConfiguration(2, "Resistance")
     inst.set_channelConfiguration(3, "Resistance")
     inst.set_channelConfiguration(4, "Resistance")
-    inst.configure_channel(1)
-    value = inst.measure_value()
+    inst.configure(1)
+    value = inst.measure_value("Resistance")
     print(value)
-    inst.configure_channel(2)
-    value = inst.measure_value()
+    inst.configure(2)
+    value = inst.measure_value("Resistance")
     print(value)
-    inst.configure_channel(3)
-    value = inst.measure_value()
+    inst.configure(3)
+    value = inst.measure_value("Resistance")
     print(value)
-    inst.configure_channel(4)
-    value = inst.measure_value()
+    inst.configure(4)
+    value = inst.measure_value("Resistance")
     print(value)
     inst.close()
     rm.close()
