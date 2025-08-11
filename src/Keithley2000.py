@@ -1,24 +1,3 @@
-# -*- coding: utf-8 -*-
-"""***************************************************************************
-* Title                 :   Configuration
-* Filename              :   config.py
-* Author                :   %(username)s
-* Origin Date           :   %(date)s
-* Version               :   00.10
-* Project               :   TRUTHS
-******************************************************************************
-*************** MODULE REVISION LOG ******************************************
-*
-*  Date        Version    Initials  Description 
-*  2021-10-21  00.10      LME       Module Created.
-*
-******************************************************************************
-* \file    %(filename)
-* \brief   This module contains the ...
-*
-***************************************************************************"""
-
-#Standard Modules
 import pyvisa
 import time
 
@@ -38,10 +17,13 @@ class Keithley2000:
     
     #---- Switch Control Functions ------------
     def closeChannel(self, channelNumber):
-        self.device.write('ROUTE:CLOSE (@' + str(channelNumber)+')')
+        self.device.write("ROUT:OPEN:ALL")  # Open all channels
+        time.sleep(0.1)
+        self.device.write(f"ROUT:CLOS (@{channelNumber})")  # Close the specific channel
+        return
     
     def openChannel(self, channelNumber):
-        self.device.write('ROUTE:OPEN:ALL')
+        self.device.write('ROUTE:OPEN (@' + str(channelNumber)+')')
     
     def openAllChannels(self):
         command = 'ROUTE:OPEN:ALL'
@@ -60,14 +42,28 @@ class Keithley2000:
             self.configRes4W(measRange, resolution)
         
     def readValue(self):
-        """ Triggers the meter for a measurement. 
-           float measured voltage"""
-        command ="INITiate:IMMediate"
-        self.device.write(command)
-        time.sleep(self.aquisitionTime)
-        command = "FETCH?"
-        value = self.device.query(command)
-        return value
+        """Reads the value from the instrument in the current configuration."""
+        try:
+            response = self.device.query("READ?")
+            # Remove non-numeric and non-standard characters
+            cleaned = "".join(c for c in response if c in "0123456789.-eE+")
+            value = float(cleaned)
+            return value
+        except (pyvisa.VisaIOError, ValueError) as e:
+            print(f"Keithley measurement error: {e}")
+            return None
+    
+    def measureChanel(self, config, chanel, measRange, measResolution):
+        """Performs an :ABORt, :CONFigure:<function>, and a :READ?."""
+        self.openAllChannels()
+        self.closeChannel(chanel)
+        if config == "Voltage":
+            self.configVoltageDC(measRange, measResolution)
+        if config == "Resistance":
+            self.configRes2W(measRange, measResolution)
+        self.device.write("MEAS[:config]")
+        
+        command =
     
     #---- Local used functions -----
     def configVoltageDC(self, measRange,measResolution):
