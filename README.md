@@ -40,3 +40,12 @@ To set up a virtual environment for this project, follow these steps:
     ```
 
     the output should include the address of your Keithley instrument (e.g., `('ASRL1::INSTR',)`).
+
+* **General mode of operation:**
+  The Keithley 2000 can be configured to measure different parameters such as voltage, current, and resistance, frequency, etc. In order to measure a specific channel, the script will follow this pseudo code:
+
+   ```python
+   inst.configure(channel)  # Configure the instrument for the specified channel
+   inst.open_channel(channel) # Open the specified channel, such that the instrument is ready to measure
+   inst.measure_value() # Measure the value with the configured settings
+   ```

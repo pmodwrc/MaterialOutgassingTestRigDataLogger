@@ -529,8 +529,10 @@ class KeithleyController:
                         )  # Read resistance
                         measurement = self.NTC_44007(resistance)
                     else:
-                        measurement = float(self.instrument.query("READ?"))
-
+                        measurement = self.instrument.query("READ?")
+                        measurement = float(
+                            "".join(c for c in measurement if c in "0123456789.-eE+")
+                        )  # Clean the response
                     self.measurements[channel].append(measurement)
 
             # Update plot
