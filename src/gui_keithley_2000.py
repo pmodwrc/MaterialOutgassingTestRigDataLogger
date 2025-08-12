@@ -128,7 +128,7 @@ class KeithleyGUI:
         self.is_measuring = False
         self.measurements = {channel: [] for channel in range(1, self.num_channels + 1)}
         self.times = []
-   
+
     def create_channel_controls(self):
         """Create controls for each channel in the middle right frame."""
         channel_frame = tk.Frame(self.middle_right_frame)
@@ -155,7 +155,7 @@ class KeithleyGUI:
     def update_connect_button_color(self, button):
         """Change the button color to green to indicate a successful connection."""
         button.config(bg="green", fg="white")
-    
+
     def connect_instrument(self):
         selected_instrument = self.instrument_var.get()
         if selected_instrument != "None":
@@ -168,6 +168,10 @@ class KeithleyGUI:
                 )
                 self.update_connect_button_color(self.connect_button)
                 self.keithley = Keithley2000(self.instrument)
+                # Set a longer timeout for measurements (10 seconds)
+                self.instrument.timeout = 10000
+                # Initialize the instrument
+                self.keithley.init()
             except pyvisa.VisaIOError:
                 messagebox.showerror(
                     "Connection Error", "Failed to connect to the instrument."
@@ -179,19 +183,33 @@ class KeithleyGUI:
             full_timestamp = datetime.now()
             self.times.append(full_timestamp)
             for channel in range(1, self.num_channels + 1):
-                if self.channel_vars[channel].get(): # if channel is selected
+                if self.channel_vars[channel].get():  # if channel is selected
                     config = self.channel_configs[channel].get()
-                    measurement = self.keithley.readValue()
+                    measurement = self.keithley.measureChanel(config, channel, 10, 5)
+                    print(f"Channel {channel} measurement: {measurement}")
+                    # Handle None values - replace with 0
+                    if measurement is None:
+                        # Use 0 if no previous measurements
+                        measurement = 0.0
+                        print(
+                            f"Channel {channel} timeout/error - using fallback value: {measurement}"
+                        )
                     self.measurements[channel].append(measurement)
             self.ax.clear()
-            for channel, values in self.measurements.items():
-                if self.channel_vars[channel].get():
-                    legend_text = self.channel_names[channel].get() or f"CH{channel}"
-                    self.ax.plot(self.times, values, label=legend_text)
             self.ax.set_title("Measurements Over Time")
             self.ax.set_xlabel("Time (HH:MM:SS)")
             self.ax.set_ylabel("Value")
-            self.ax.legend()
+            # Plot data for each selected channel
+            for channel in range(1, self.num_channels + 1):
+                if self.channel_vars[channel].get() and len(self.measurements[channel]) > 0:
+                    times_plot = [dt.timestamp() for dt in self.times[:len(self.measurements[channel])]]
+                    self.ax.plot(
+                        times_plot,
+                        self.measurements[channel],
+                        label=f"CH{channel}"
+                    )
+            if any(self.channel_vars[channel].get() for channel in range(1, self.num_channels + 1)):
+                self.ax.legend()
             self.ax.xaxis.set_major_formatter(
                 FuncFormatter(
                     lambda x, _: datetime.fromtimestamp(x).strftime("%H:%M:%S")
@@ -205,8 +223,6 @@ class KeithleyGUI:
             self.result_label.config(text=f"Latest Measurements: {latest_measurements}")
             self.master.update()
             time.sleep(self.interval)
-
-
 
     def start_measurement(self):
         if hasattr(self, "instrument"):
@@ -304,15 +320,3 @@ class KeithleyGUI:
 
         self.destroy()
         self.quit()  # Ensure the mainloop exits
-
-
-# if __name__ == "__main__":
-#     try:
-#         app = Gui_Keithley_2000()
-#         app.mainloop()
-#     except KeyboardInterrupt:
-#         pass
-#     finally:
-#         # Ensure the process exits
-#         import sys
-#         sys.exit()
