@@ -55,18 +55,32 @@ class Keithley2000:
             print(f"Keithley measurement error: {e}")
             return None
 
-    def measureChanel(self, config, chanel, measRange, measResolution):
-        """Performs an :ABORt, :CONFigure:<function>, and a :READ?."""
+    def measureChanel(self, config, chanel, measRange=1000, measResolution=7):
+        """closes one specific channel, configures it and measures the value, which is cleaned and returned"""
         try:
             self.openAllChannels()
             self.closeChannel(chanel)
             if config == "Voltage":
                 self.configVoltageDC(measRange, measResolution)
-            if config == "Resistance":
+            elif config == "Resistance":
                 self.configRes2W(measRange, measResolution)
-            if config == "Current":
+            elif config == "Current":
                 self.configCurrentDC(measRange, measResolution)
-            # self.device.write("MEAS[:config]")
+            elif config == "PT100":
+                self.configRes2W(measRange, measResolution)
+                response = self.device.query("READ?")
+                cleaned = float("".join(c for c in response if c in "0123456789.-eE+"))
+                # t=(-AR_0+srt((AR_0)^2-4BR_0(R_0-R)))/2BR_0
+                A = 3.9827e-3
+                B = -5.875e-7
+                R_0 = 100.0  # PT100 resistance at 0°C
+                temperature = (
+                    -A * R_0 + (A**2 * R_0**2 - 4 * B * R_0 * (R_0 - cleaned)) ** 0.5
+                ) / (2 * B * R_0)
+                return temperature
+            elif config == "Frequency":
+                self.configFreq(measRange, measResolution)
+            time.sleep(self.aquisitionTime)
             response = self.device.query("READ?")
             # Filter out the response to numeric
             cleaned = "".join(c for c in response if c in "0123456789.-eE+")
@@ -135,6 +149,14 @@ class Keithley2000:
         self.device.write(command)
 
         self.aquisitionTime = 1
+
+    def configFreq(self, measRange, measResolution):
+        """Configures the Meter to Frequency
+        Arguments:
+        measRange      -- float measurement range [0.1, 1, 10, 100, 1000]
+        measResolution -- int measurement resolution in digit[4,5,6,7]"""
+        command = "conf:FREQ"
+        self.device.write(command)
 
     def getConfig(self):
         config = self.device.query("FUNC?")

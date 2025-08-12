@@ -142,7 +142,15 @@ class KeithleyGUI:
             checkbox.grid(row=channel - 1, column=0, padx=5, pady=2, sticky=tk.W)
             self.channel_vars[channel] = var
 
-            options = ["Voltage", "Current", "Resistance", "NTC_44006", "NTC_44007"]
+            options = [
+                "Voltage",
+                "Current",
+                "Resistance",
+                "NTC_44006",
+                "NTC_44007",
+                "PT100",
+                "Frequency",
+            ]
             config_var = tk.StringVar(value="Voltage")
             config_menu = tk.OptionMenu(channel_frame, config_var, *options)
             config_menu.grid(row=channel - 1, column=1, padx=5, pady=2, sticky=tk.W)
@@ -201,14 +209,21 @@ class KeithleyGUI:
             self.ax.set_ylabel("Value")
             # Plot data for each selected channel
             for channel in range(1, self.num_channels + 1):
-                if self.channel_vars[channel].get() and len(self.measurements[channel]) > 0:
-                    times_plot = [dt.timestamp() for dt in self.times[:len(self.measurements[channel])]]
+                if (
+                    self.channel_vars[channel].get()
+                    and len(self.measurements[channel]) > 0
+                ):
+                    times_plot = [
+                        dt.timestamp()
+                        for dt in self.times[: len(self.measurements[channel])]
+                    ]
                     self.ax.plot(
-                        times_plot,
-                        self.measurements[channel],
-                        label=f"CH{channel}"
+                        times_plot, self.measurements[channel], label=f"CH{channel}"
                     )
-            if any(self.channel_vars[channel].get() for channel in range(1, self.num_channels + 1)):
+            if any(
+                self.channel_vars[channel].get()
+                for channel in range(1, self.num_channels + 1)
+            ):
                 self.ax.legend()
             self.ax.xaxis.set_major_formatter(
                 FuncFormatter(
