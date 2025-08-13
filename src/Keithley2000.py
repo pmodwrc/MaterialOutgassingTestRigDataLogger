@@ -1,5 +1,6 @@
 import pyvisa
 import time
+import math
 
 
 class Keithley2000:
@@ -66,30 +67,17 @@ class Keithley2000:
                 self.configRes2W(measRange, measResolution)
             elif config == "Current":
                 self.configCurrentDC(measRange, measResolution)
-            elif config == "PT100":
-                self.configRes2W(measRange, measResolution)
-                response = self.device.query("READ?")
-                cleaned = float("".join(c for c in response if c in "0123456789.-eE+"))
-                # t=(-AR_0+srt((AR_0)^2-4BR_0(R_0-R)))/2BR_0
-                A = 3.9827e-3
-                B = -5.875e-7
-                R_0 = 100.0  # PT100 resistance at 0°C
-                temperature = (
-                    -A * R_0 + (A**2 * R_0**2 - 4 * B * R_0 * (R_0 - cleaned)) ** 0.5
-                ) / (2 * B * R_0)
-                return temperature
             elif config == "Frequency":
                 self.configFreq(measRange, measResolution)
+            elif config == "PT100":
+                return self.measurePt100(measRange, measResolution)
+            elif config == "NTC_44006":
+                return self.measureNTC_44006(measRange, measResolution)
+            elif config == "NTC_44007":
+                return self.measureNTC_44007(measRange, measResolution)
             time.sleep(self.aquisitionTime)
-            response = self.device.query("READ?")
-            # Filter out the response to numeric
-            cleaned = "".join(c for c in response if c in "0123456789.-eE+")
-            try:
-                value = float(cleaned)
-            except ValueError:
-                value = None
-            return value
-        except (pyvisa.VisaIOError, ValueError) as e:
+            return self.readValue()
+        except pyvisa.VisaIOError as e:
             print(f"Keithley measurement error: {e}")
             return None
 
@@ -157,6 +145,45 @@ class Keithley2000:
         measResolution -- int measurement resolution in digit[4,5,6,7]"""
         command = "conf:FREQ"
         self.device.write(command)
+
+    def measurePt100(self, measRange, measResolution):
+        """Configures the Meter to PT100 temperature measurement"""
+        self.configRes2W(measRange, measResolution)
+        resistance = self.readValue()
+        # t=(-AR_0+srt((AR_0)^2-4BR_0(R_0-R)))/2BR_0
+        A = 3.9827e-3
+        B = -5.875e-7
+        R_0 = 100.0  # PT100 resistance at 0°C
+        temperature = (
+            -A * R_0 + (A**2 * R_0**2 - 4 * B * R_0 * (R_0 - resistance)) ** 0.5
+        ) / (2 * B * R_0)
+        return temperature
+    
+    def measureNTC_44006(self, measRange, measResolution):
+        """Calculate temperature from NTC thermistor resistance using Steinhart-Hart equation."""
+        self.configRes2W(measRange, measResolution)
+        resistance = self.readValue()
+        A = 1.032e-3
+        B = 2.387e-4
+        C = 1.580e-7
+        log_resistance = math.log(resistance)
+        inv_temp = A + B * log_resistance + C * log_resistance**3
+        temperature_kelvin = 1 / inv_temp
+        temperature_celsius = temperature_kelvin - 273.15
+        return temperature_celsius
+
+    def measureNTC_44007(self, measRange, measResolution):
+        """Calculate temperature from NTC thermistor resistance using Steinhart-Hart equation."""
+        self.configRes2W(measRange, measResolution)
+        resistance = self.readValue()
+        A = 1.285e-3
+        B = 2.362e-4
+        C = 9.285e-8
+        log_resistance = math.log(resistance)
+        inv_temp = A + B * log_resistance + C * log_resistance**3
+        temperature_kelvin = 1 / inv_temp
+        temperature_celsius = temperature_kelvin - 273.15
+        return temperature_celsius
 
     def getConfig(self):
         config = self.device.query("FUNC?")

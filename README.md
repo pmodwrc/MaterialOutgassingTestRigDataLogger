@@ -49,3 +49,13 @@ To set up a virtual environment for this project, follow these steps:
    inst.open_channel(channel) # Open the specified channel, such that the instrument is ready to measure
    inst.measure_value() # Measure the value with the configured settings
    ```
+
+* **Run the Data Logger:**
+
+In order to run the data logger, you can use the following command:
+
+```sh
+python src/main.py
+```
+
+This will start the data logger window, where you can select the instrument to use, the channels to measure, and their configurations. The data logger will continuously measure the selected channels.
