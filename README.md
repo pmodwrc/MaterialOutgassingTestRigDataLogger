@@ -24,9 +24,9 @@ To set up a virtual environment for this project, follow these steps:
    pip install -r requirements.txt
    ```
 
-## Keithley Multiplexer Setup
+## Keithley 2000 Multiplexer Setup
 
-[Documentation](https://www.tek.com/en/search?keywords=2000&facets=_templatename%3dmanual&sort=desc) of Keithley Multiplexer 2000
+[Documentation](https://www.tek.com/en/search?keywords=2000&facets=_templatename%3dmanual&sort=desc) of Keithley 2000 Multiplexer
 
 * **Install Keysight IO** you can download the latest version of the Keysight I/O from the [Keysight website](https://www.keysight.com/us/en/lib/software-detail/computer-software/io-libraries-suite-downloads-2175637.html). This software is essential for communicating with Keithley instruments.
   * Install "IO library" and leave everything at default settings.
@@ -50,7 +50,12 @@ To set up a virtual environment for this project, follow these steps:
    inst.measure_value() # Measure the value with the configured settings
    ```
 
-* **Run the Data Logger:**
+## Keysight DAQ970A Setup
+
+Download the latest python driver for the Keysight DAQ970A from the [Keysight website](https://www.keysight.com/us/en/lib/software-detail/driver/daq970-data-acquisition-system-python-instrument-drivers.html). This driver is essential for communicating with the Keysight DAQ970A instrument.
+
+
+## Run the Data Logger:**
 
 In order to run the data logger, you can use the following command:
 
