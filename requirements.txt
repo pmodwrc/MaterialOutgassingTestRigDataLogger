@@ -3,3 +3,4 @@ pyvisa
 pyvisa-py
 psutil
 zeroconf
+customtkinter
