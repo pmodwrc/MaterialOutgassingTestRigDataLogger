@@ -1,0 +1,10 @@
+channel_nr,configuration,active
+1,Voltage,TRUE
+2,Voltage,FALSE
+3,Voltage,FALSE
+4,Voltage,FALSE
+5,Voltage,FALSE
+7,Voltage,FALSE
+8,Voltage,FALSE
+9,Voltage,FALSE
+10,Voltage,FALSE

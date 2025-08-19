@@ -27,6 +27,7 @@ class KeithleyCustomTkinterGUI:
         # Define default button colors
         self.default_button_fg_color = "#3b8ed0"
         self.default_button_text_color = "white"
+        self.default_grid_color = "#f0f0f0"
         self.create_frames(master)
         self.create_widgets(master)
 
@@ -57,6 +58,52 @@ class KeithleyCustomTkinterGUI:
     def create_widgets(self, master):
         """Create the widgets for the GUI."""
         # Instrument selection and connection (top left)
+        self.create_instrument_controls(master)
+
+        # Channel controls (middle right)
+        self.channel_configs = {}
+        self.channel_vars = {}
+        self.channel_checkboxes = {}
+        self.channel_names = {}
+        self.create_channel_controls()
+
+        # Initialize the matplotlib figure (middle left)
+        self.figure, self.ax = plt.subplots()
+        self.ax.set_title("Measurements Over Time")
+        self.ax.set_xlabel("Time (HH:MM:SS)")
+        self.ax.set_ylabel("Value")
+
+        # Embed the figure in the CustomTkinter canvas
+        self.canvas = FigureCanvasTkAgg(self.figure, master=self.middle_left_frame)
+        self.canvas.draw()
+        self.canvas.get_tk_widget().pack(side="top", fill="both", expand=True)
+
+        # Save buttons (bottom)
+        self.save_chart_button = ctk.CTkButton(
+            self.bottom_frame,
+            text="Save Chart as PNG",
+            command=self.save_chart_as_png,
+            width=20,
+            fg_color=self.default_button_fg_color,
+            text_color=self.default_button_text_color,
+        )
+        self.save_chart_button.grid(row=0, column=0, padx=5, pady=5)
+        self.save_csv_button = ctk.CTkButton(
+            self.bottom_frame,
+            text="Save Measurements as CSV",
+            command=self.save_measurements_as_csv,
+            width=20,
+            fg_color=self.default_button_fg_color,
+            text_color=self.default_button_text_color,
+        )
+        self.save_csv_button.grid(row=0, column=1, padx=5, pady=5)
+        self.result_label = ctk.CTkLabel(self.bottom_frame, text="", width=80)
+        self.result_label.grid(row=0, column=2, columnspan=2, padx=5, pady=5)
+        self.is_measuring = False
+        self.measurements = {channel: [] for channel in range(1, self.num_channels + 1)}
+        self.times = []
+
+    def create_instrument_controls(self, master):
         self.label = ctk.CTkLabel(self.top_left_frame, text="Select Instrument:")
         self.label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
 
@@ -113,49 +160,6 @@ class KeithleyCustomTkinterGUI:
         )
         self.stop_button.grid(row=1, column=3, padx=5, pady=5)
 
-        # Channel controls (middle right)
-        self.channel_configs = {}
-        self.channel_vars = {}
-        self.channel_checkboxes = {}
-        self.channel_names = {}
-        self.create_channel_controls()
-
-        # Initialize the matplotlib figure (middle left)
-        self.figure, self.ax = plt.subplots()
-        self.ax.set_title("Measurements Over Time")
-        self.ax.set_xlabel("Time (HH:MM:SS)")
-        self.ax.set_ylabel("Value")
-
-        # Embed the figure in the CustomTkinter canvas
-        self.canvas = FigureCanvasTkAgg(self.figure, master=self.middle_left_frame)
-        self.canvas.draw()
-        self.canvas.get_tk_widget().pack(side="top", fill="both", expand=True)
-
-        # Save buttons (bottom)
-        self.save_chart_button = ctk.CTkButton(
-            self.bottom_frame,
-            text="Save Chart as PNG",
-            command=self.save_chart_as_png,
-            width=20,
-            fg_color=self.default_button_fg_color,
-            text_color=self.default_button_text_color,
-        )
-        self.save_chart_button.grid(row=0, column=0, padx=5, pady=5)
-        self.save_csv_button = ctk.CTkButton(
-            self.bottom_frame,
-            text="Save Measurements as CSV",
-            command=self.save_measurements_as_csv,
-            width=20,
-            fg_color=self.default_button_fg_color,
-            text_color=self.default_button_text_color,
-        )
-        self.save_csv_button.grid(row=0, column=1, padx=5, pady=5)
-        self.result_label = ctk.CTkLabel(self.bottom_frame, text="", width=80)
-        self.result_label.grid(row=0, column=2, columnspan=2, padx=5, pady=5)
-        self.is_measuring = False
-        self.measurements = {channel: [] for channel in range(1, self.num_channels + 1)}
-        self.times = []
-
     def create_channel_controls(self):
         """Create controls for each channel in the middle right frame."""
         channel_frame = ctk.CTkFrame(self.middle_right_frame)
@@ -199,6 +203,30 @@ class KeithleyCustomTkinterGUI:
             name_entry.insert(0, name)
             name_entry.grid(row=channel - 1, column=2, padx=5, pady=2, sticky=ctk.W)
             self.channel_names[channel] = name_entry
+            # Add a dropdown menu to select config files in the folder
+            config_files = [
+                f
+                for f in os.listdir(os.path.dirname(os.path.abspath(__file__)))
+                if f.startswith("channel_configs") and f.endswith(".csv")
+            ]
+            self.selected_config_var = ctk.StringVar(
+                value=os.path.basename(self.config_file)
+            )
+            config_menu = ctk.CTkOptionMenu(
+                channel_frame,
+                variable=self.selected_config_var,
+                values=config_files,
+                fg_color=self.default_button_fg_color,
+                text_color=self.default_button_text_color,
+                command=self.on_config_file_change,
+            )
+            config_menu.grid(
+                row=self.num_channels,
+                column=0,
+                padx=5,
+                pady=(0, 5),
+                sticky="ew",
+            )
             # Add "Open Channel Config CSV" button at the bottom of the channel controls
             open_config_button = ctk.CTkButton(
                 channel_frame,
@@ -216,13 +244,23 @@ class KeithleyCustomTkinterGUI:
             )
             # Place the "Open Channel Config CSV" button at the bottom of the channel controls
             open_config_button.grid(
-                row=self.num_channels,
+                row=self.num_channels + 1,
                 column=0,
                 columnspan=3,
                 padx=5,
                 pady=10,
                 sticky="ew",
             )
+
+    def on_config_file_change(self, selected_file):
+        # Set new config file path
+        self.config_file = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), selected_file
+        )
+        # Destroy and rebuild the window with new config
+        for widget in self.middle_right_frame.winfo_children():
+            widget.destroy()
+        self.create_channel_controls()
 
     def load_channel_configs(self):
         # Try to load channel config from CSV
