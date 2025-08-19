@@ -17,6 +17,7 @@ class KeithleyGUI:
         self.interval = interval
         self.rm = pyvisa.ResourceManager()
         self.instruments = self.get_instruments()
+        self.selected_instrument = None
         self.keithley = None
 
         self.create_frames(master)
@@ -56,7 +57,10 @@ class KeithleyGUI:
         self.instrument_var.set(self.instruments[0] if self.instruments else "None")
 
         self.instrument_menu = tk.OptionMenu(
-            self.top_left_frame, self.instrument_var, *self.instruments
+            self.top_left_frame,
+            self.instrument_var,
+            *self.instruments,
+            command=self.on_instrument_change,
         )
         self.instrument_menu.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
 
@@ -64,7 +68,7 @@ class KeithleyGUI:
             self.top_left_frame,
             text="Connect",
             command=self.connect_instrument,
-            width=20,
+            width=15,
         )
         self.connect_button.grid(row=1, column=0, padx=5, pady=5)
 
@@ -164,15 +168,24 @@ class KeithleyGUI:
         """Change the button color to green to indicate a successful connection."""
         button.config(bg="green", fg="white")
 
+    def on_instrument_change(self, _value):
+        """Reset Connect button color when a new instrument is selected."""
+        # Switch back to white to indicate not connected after selection change
+        if hasattr(self, "connect_button"):
+            self.connect_button.config(bg="white", fg="black")
+        # Optionally clear any existing instrument handle (kept minimal per request)
+        # self.instrument = None
+        # self.keithley = None
+
     def connect_instrument(self):
-        selected_instrument = self.instrument_var.get()
-        if selected_instrument != "None":
+        self.selected_instrument = self.instrument_var.get()
+        if self.selected_instrument != "None":
             try:
-                self.instrument = self.rm.open_resource(selected_instrument)
+                self.instrument = self.rm.open_resource(self.selected_instrument)
                 idn_response = self.instrument.query("*IDN?")
                 messagebox.showinfo(
                     "Connected",
-                    f"Connected to {selected_instrument}\nIDN: {idn_response}",
+                    f"Connected to {self.selected_instrument}\nIDN: {idn_response}",
                 )
                 self.update_connect_button_color(self.connect_button)
                 self.keithley = Keithley2000(self.instrument)

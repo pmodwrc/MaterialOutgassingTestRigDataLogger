@@ -1,5 +1,6 @@
 # Python virtual environment
-venv/
+.venv/
 __pycache__/
 .spyproject/
 .vscode/
+keysight_ktdaq970_V1.2.0_python3.10_64-bit_binary_package/
