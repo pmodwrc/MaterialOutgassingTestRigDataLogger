@@ -1,5 +1,3 @@
-"""This is the ui for the Material Outgassing Test Rig Data Logger."""
-
 import customtkinter as ctk
 from tkinter import messagebox, filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -14,7 +12,10 @@ import os
 
 
 class KeithleyCustomTkinterGUI:
+    """This is the ui for the Material Outgassing Test Rig Data Logger."""
+
     def __init__(self, master, num_channels=20, interval=1):
+        master.title("measurement ui")
         self.master = master
         self.num_channels = num_channels
         self.channel_configs = {}
@@ -27,7 +28,9 @@ class KeithleyCustomTkinterGUI:
         # Define default button colors
         self.default_button_fg_color = "#3b8ed0"
         self.default_button_text_color = "white"
-        self.default_grid_color = "#f0f0f0"
+        self.default_grid_color = "#f1f1f1"
+        master.configure(bg="white")
+        
         self.create_frames(master)
         self.create_widgets(master)
 
@@ -41,11 +44,21 @@ class KeithleyCustomTkinterGUI:
 
     def create_frames(self, master):
         """Create the main frames for the GUI."""
-        self.top_left_frame = ctk.CTkFrame(master)
-        self.top_right_frame = ctk.CTkFrame(master)
-        self.middle_left_frame = ctk.CTkFrame(master)
-        self.middle_right_frame = ctk.CTkFrame(master)
-        self.bottom_frame = ctk.CTkFrame(master)
+        self.top_left_frame = ctk.CTkFrame(
+            master, corner_radius=5, fg_color=self.default_grid_color
+        )
+        self.top_right_frame = ctk.CTkFrame(
+            master, corner_radius=5, fg_color=self.default_grid_color
+        )
+        self.middle_left_frame = ctk.CTkFrame(
+            master, corner_radius=5, fg_color=self.default_grid_color
+        )
+        self.middle_right_frame = ctk.CTkFrame(
+            master, corner_radius=5, fg_color=self.default_grid_color
+        )
+        self.bottom_frame = ctk.CTkFrame(
+            master, corner_radius=5, fg_color=self.default_grid_color
+        )
 
         self.top_left_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         self.top_right_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
@@ -162,8 +175,8 @@ class KeithleyCustomTkinterGUI:
 
     def create_channel_controls(self):
         """Create controls for each channel in the middle right frame."""
-        channel_frame = ctk.CTkFrame(self.middle_right_frame)
-        channel_frame.pack()
+        channel_frame = self.middle_right_frame
+        # channel_frame.pack()
         self.load_channel_configs()
         for channel in range(1, self.num_channels + 1):
             active = False
@@ -178,7 +191,9 @@ class KeithleyCustomTkinterGUI:
             print(f"Channel {channel} settings: {active}, {config}")
             var = ctk.BooleanVar(value=active)
             checkbox = ctk.CTkCheckBox(channel_frame, text=f"CH{channel}", variable=var)
-            checkbox.grid(row=channel - 1, column=0, padx=5, pady=2, sticky="w")
+            # Add extra padding only to the first channel
+            pady_val = (5, 2) if channel == 1 else 2
+            checkbox.grid(row=channel - 1, column=0, padx=5, pady=pady_val, sticky="w")
             self.channel_vars[channel] = var
             options = [
                 "Voltage",
@@ -197,60 +212,65 @@ class KeithleyCustomTkinterGUI:
                 fg_color=self.default_button_fg_color,
                 text_color=self.default_button_text_color,
             )
-            config_menu.grid(row=channel - 1, column=1, padx=5, pady=2, sticky=ctk.W)
-            self.channel_configs[channel] = config_var
-            name_entry = ctk.CTkEntry(channel_frame, width=20)
-            name_entry.insert(0, name)
-            name_entry.grid(row=channel - 1, column=2, padx=5, pady=2, sticky=ctk.W)
-            self.channel_names[channel] = name_entry
-            # Add a dropdown menu to select config files in the folder
-            config_files = [
-                f
-                for f in os.listdir(os.path.dirname(os.path.abspath(__file__)))
-                if f.startswith("channel_configs") and f.endswith(".csv")
-            ]
-            self.selected_config_var = ctk.StringVar(
-                value=os.path.basename(self.config_file)
-            )
-            config_menu = ctk.CTkOptionMenu(
-                channel_frame,
-                variable=self.selected_config_var,
-                values=config_files,
-                fg_color=self.default_button_fg_color,
-                text_color=self.default_button_text_color,
-                command=self.on_config_file_change,
-            )
             config_menu.grid(
-                row=self.num_channels,
-                column=0,
-                padx=5,
-                pady=(0, 5),
-                sticky="ew",
+                row=channel - 1, column=1, padx=5, pady=pady_val, sticky=ctk.W
             )
-            # Add "Open Channel Config CSV" button at the bottom of the channel controls
-            open_config_button = ctk.CTkButton(
-                channel_frame,
-                text="Open Channel Config CSV",
-                command=lambda: (
-                    os.startfile(self.config_file)
-                    if os.path.exists(self.config_file)
-                    else messagebox.showwarning(
-                        "File Not Found", "Channel config CSV not found."
-                    )
-                ),
-                width=20,
-                fg_color=self.default_button_fg_color,
-                text_color=self.default_button_text_color,
+            self.channel_configs[channel] = config_var
+            name_entry = ctk.CTkEntry(channel_frame, width=100)
+            name_entry.insert(0, name)
+            name_entry.grid(
+                row=channel - 1, column=2, padx=5, pady=pady_val, sticky=ctk.W
             )
-            # Place the "Open Channel Config CSV" button at the bottom of the channel controls
-            open_config_button.grid(
-                row=self.num_channels + 1,
-                column=0,
-                columnspan=3,
-                padx=5,
-                pady=10,
-                sticky="ew",
-            )
+            self.channel_names[channel] = name_entry
+        # Add a dropdown menu to select config files in the folder
+        config_files = [
+            f
+            for f in os.listdir(os.path.dirname(os.path.abspath(__file__)))
+            if f.startswith("channel_configs") and f.endswith(".csv")
+        ]
+        self.selected_config_var = ctk.StringVar(
+            value=os.path.basename(self.config_file)
+        )
+        config_menu = ctk.CTkOptionMenu(
+            channel_frame,
+            variable=self.selected_config_var,
+            values=config_files,
+            fg_color=self.default_button_fg_color,
+            text_color=self.default_button_text_color,
+            command=self.on_config_file_change,
+        )
+        config_menu.grid(
+            row=self.num_channels,
+            column=0,
+            columnspan=3,
+            padx=5,
+            pady=(10, 5),
+            sticky="ew",
+        )
+        # Add "Open Channel Config CSV" button at the bottom of the channel controls
+        open_config_button = ctk.CTkButton(
+            channel_frame,
+            text="Open Channel Config CSV",
+            command=lambda: (
+                os.startfile(self.config_file)
+                if os.path.exists(self.config_file)
+                else messagebox.showwarning(
+                    "File Not Found", "Channel config CSV not found."
+                )
+            ),
+            width=20,
+            fg_color=self.default_button_fg_color,
+            text_color=self.default_button_text_color,
+        )
+        # Place the "Open Channel Config CSV" button at the bottom of the channel controls
+        open_config_button.grid(
+            row=self.num_channels + 1,
+            column=0,
+            columnspan=3,
+            padx=5,
+            pady=5,
+            sticky="ew",
+        )
 
     def on_config_file_change(self, selected_file):
         # Set new config file path
