@@ -8,6 +8,7 @@ import time
 from datetime import datetime
 import csv
 from Keithley2000 import Keithley2000
+from keyseight_DAC970A import KeysightDAQ970A
 import os
 
 
@@ -26,7 +27,7 @@ class KeithleyCustomTkinterGUI:
         self.rm = pyvisa.ResourceManager()
         self.instruments = self.get_instruments()
         self.selected_instrument = None
-        self.keithley = None
+        self.instrument = None
         # Define default button colors
         self.default_button_fg_color = "#3b8ed0"
         self.default_button_text_color = "white"
@@ -144,6 +145,17 @@ class KeithleyCustomTkinterGUI:
             fg_color=self.default_button_fg_color,
             text_color=self.default_button_text_color,
         )
+        # Add a dropdown menu for device type selection
+        device_types = ["Keithley2000", "KeysightDAQ970A"]
+        self.device_type_var = ctk.StringVar(value=device_types[0])
+        self.device_type_menu = ctk.CTkOptionMenu(
+            self.top_left_frame,
+            variable=self.device_type_var,
+            values=device_types,
+            fg_color=self.default_button_fg_color,
+            text_color=self.default_button_text_color,
+        )
+        self.device_type_menu.grid(row=0, column=2, padx=5, pady=5, sticky="w")
         self.connect_button.grid(row=1, column=0, padx=5, pady=5)
 
         self.clear_button = ctk.CTkButton(
@@ -323,8 +335,7 @@ class KeithleyCustomTkinterGUI:
             self.connect_button.configure(fg_color="#3b8ed0", text_color="white")
             self.connect_button.configure(text="Connect")
         # Optionally clear any existing instrument handle (kept minimal per request)
-        # self.instrument = None
-        # self.keithley = None
+        self.instrument = None
 
     def connect_instrument(self):
         self.selected_instrument = self.instrument_var.get()
@@ -336,12 +347,16 @@ class KeithleyCustomTkinterGUI:
                     "Connected",
                     f"Connected to {self.selected_instrument}\nIDN: {idn_response}",
                 )
+
                 self.update_connect_button(self.connect_button)
-                self.keithley = Keithley2000(self.instrument)
+                if self.device_type_var.get() == "Keithley2000":
+                    self.instrument = Keithley2000(self.instrument)
+                elif self.device_type_var.get() == "KeysightDAQ970A":
+                    self.instrument = KeysightDAQ970A(self.instrument)
                 # Set a longer timeout for measurements (10 seconds)
                 self.instrument.timeout = 10000
                 # Initialize the instrument
-                self.keithley.init()
+                self.instrument.init()
             except pyvisa.VisaIOError:
                 messagebox.showerror(
                     "Connection Error", "Failed to connect to the instrument."
@@ -355,7 +370,7 @@ class KeithleyCustomTkinterGUI:
             for channel in range(1, self.number_of_channels + 1):
                 if self.channel_vars[channel].get():  # if channel is selected
                     config = self.channel_configs[channel].get()
-                    measurement = self.keithley.measureChanel(config, channel, 10, 5)
+                    measurement = self.instrument.measureChannel(config, channel, 10, 5)
                     print(f"Channel {channel} measurement: {measurement}")
                     # Handle None values - replace with 0
                     if measurement is None:

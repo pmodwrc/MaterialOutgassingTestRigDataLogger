@@ -52,12 +52,18 @@ To set up a virtual environment for this project, follow these steps:
 
 ## Keysight DAQ970A Setup
 
-Download the latest python driver for the Keysight DAQ970A from the [Keysight website](https://www.keysight.com/us/en/lib/software-detail/driver/daq970-data-acquisition-system-python-instrument-drivers.html). This driver is essential for communicating with the Keysight DAQ970A instrument.
+* **Connect the DAQ970A to your PC:**
+  * By LAN:
+    * Connect it via lan and add the instrument in the Keysight Connection Expert. You should be able to see the device in the browser when searching for its [IP address](http://172.16.10.196/Index.asp)
+  * Via USB:
+    * Connect the USB cable from the DAQ970A to your PC. You should be able to see the device in the Keysight Connection Expert.
+
+<!-- Download the latest python driver for the Keysight DAQ970A from the [Keysight website](https://www.keysight.com/us/en/lib/software-detail/driver/daq970-data-acquisition-system-python-instrument-drivers.html). This driver is essential for communicating with the Keysight DAQ970A instrument.
 
 Connect it via lan and add the instrument in the Keysight Connection Expert.
 You should be able to see the device in the browser when searching for its [IP address](http://172.16.10.196/Index.asp)
 
-[Python Programming Example](https://docs.keysight.com/kkbopen/programming-example-how-to-use-external-data-logger-elog-with-python-programming-620698733.html)
+[Python Programming Example](https://docs.keysight.com/kkbopen/programming-example-how-to-use-external-data-logger-elog-with-python-programming-620698733.html) -->
 
 ## Run the Data Logger:**
 

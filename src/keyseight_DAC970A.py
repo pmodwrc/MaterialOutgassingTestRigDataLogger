@@ -3,20 +3,19 @@ import time
 import math
 
 
-class Keithley2000:
-    """
-    Base class for the Keithley2000 instrument control
-    """
+class KeysightDAQ970A:
+    """A class to interface with the Keysight DAQ970A Data Acquisition System."""
 
     def __init__(self, device):
         self.device = device
-        self.numChannels = 10
-        self.aquisitionTime = 1
+        self.num_of_channels = 19
+        self.aquisition_time = 1
 
     def init(self):
         """Initializes the instruent and resets it"""
         self.device.write("*RST")
         self.device.write("*CLS")
+        # self.device.write("*ABOR")
 
     # ---- Switch Control Functions ------------
     def closeChannel(self, channelNumber):
@@ -56,94 +55,59 @@ class Keithley2000:
             print(f"Keithley measurement error: {e}")
             return None
 
-    def measureChannel(self, config, chanel, measRange=1000, measResolution=7):
+    def measureChannel(self, config, channel, measRange=1000, measResolution=7):
         """closes one specific channel, configures it and measures the value, which is cleaned and returned"""
+        channel += 100  # channel numbering starts at 100
         try:
-            self.openAllChannels()
-            self.closeChannel(chanel)
             if config == "Voltage":
-                self.configVoltageDC(measRange, measResolution)
+                self.configVoltageDC(channel, measRange, measResolution)
             elif config == "Resistance":
-                self.configRes2W(measRange, measResolution)
+                self.configRes2W(channel, measRange, measResolution)
             elif config == "Current":
-                self.configCurrentDC(measRange, measResolution)
+                self.configCurrentDC(channel, measRange, measResolution)
             elif config == "Frequency":
-                self.configFreq(measRange, measResolution)
+                self.configFreq(channel, measRange, measResolution)
             elif config == "PT100":
-                return self.measurePt100(measRange, measResolution)
+                return self.measurePt100(channel, measRange, measResolution)
             elif config == "NTC_44006":
-                return self.measureNTC_44006(measRange, measResolution)
+                return self.measureNTC_44006(channel, measRange, measResolution)
             elif config == "NTC_44007":
-                return self.measureNTC_44007(measRange, measResolution)
-            time.sleep(self.aquisitionTime)
+                return self.measureNTC_44007(channel, measRange, measResolution)
+            time.sleep(self.aquisition_time)
             return self.readValue()
         except pyvisa.VisaIOError as e:
-            print(f"Keithley measurement error: {e}")
+            print(f"Keyseight DAQ970A measurement error: {e}")
             return None
 
     # ---- Local used functions -----
-    def configVoltageDC(self, measRange, measResolution):
+    def configVoltageDC(self, channel, measRange, measResolution):
         """Configures the Meter to DC voltage
         Arguments:
         measRange      -- float measurement range [0.1, 1, 10, 100, 1000]
         measResolution -- int measurement resolution in digit[4,5,6,7]"""
-        # Check resolution limits & adjust if necessary
-        if measResolution < 4:
-            measResolution = 4
-        if measResolution > 7:
-            measResolution = 7
-        else:
-            measResolution = int(measResolution)
+        self.device.write(f"CONF:VOLT:DC (@{channel})")
 
-        command = 'FUNC "VOLT:DC";SENS:VOLT:NPLC 10'  # Config to Voltage DC
-        self.device.write(command)
-
-        command = "SENS:VOLT:DC:RANG " + str(measRange)
-        self.device.write(command)
-
-        command = "SENS:VOLT:DC:DIG " + str(measResolution)
-        self.device.write(command)
-
-        self.aquisitionTime = 1
-
-    def configRes2W(self, measRange, measResolution):
+    def configRes2W(self, channel, measRange, measResolution):
         """Configures the Meter to 2 Wire Resistance
         Arguments:
         measRange      -- float measurement range [0.1, 1, 10, 100, 1000]
         measResolution -- int measurement resolution in digit[4,5,6,7]"""
-        command = "CONF:RES"
+        command = f"CONF:RES (@{channel})"
         self.device.write(command)
 
-    def configCurrentDC(self, measRange, measResolution):
+    def configCurrentDC(self, channel, measRange, measResolution):
         """Configures the Meter to DC current
         Arguments:
         measRange      -- float measurement range [0.1, 1, 10, 100, 1000]
         measResolution -- int measurement resolution in digit[4,5,6,7]"""
-        # Check resolution limits & adjust if necessary
-        if measResolution < 4:
-            measResolution = 4
-        if measResolution > 7:
-            measResolution = 7
-        else:
-            measResolution = int(measResolution)
+        self.device.write(f"CONF:CURR:DC (@{channel})")
 
-        command = 'FUNC "CURR:DC";SENS:CURR:NPLC 10'  # Config to Current DC
-        self.device.write(command)
-
-        command = "SENS:CURR:DC:RANG " + str(measRange)
-        self.device.write(command)
-
-        command = "SENS:CURR:DC:DIG " + str(measResolution)
-        self.device.write(command)
-
-        self.aquisitionTime = 1
-
-    def configFreq(self, measRange, measResolution):
+    def configFreq(self, channel, measRange, measResolution):
         """Configures the Meter to Frequency
         Arguments:
         measRange      -- float measurement range [0.1, 1, 10, 100, 1000]
         measResolution -- int measurement resolution in digit[4,5,6,7]"""
-        command = "conf:FREQ"
+        command = f"CONF:FREQ (@{channel})"
         self.device.write(command)
 
     def measurePt100(self, measRange, measResolution):
@@ -158,7 +122,7 @@ class Keithley2000:
             -A * R_0 + (A**2 * R_0**2 - 4 * B * R_0 * (R_0 - resistance)) ** 0.5
         ) / (2 * B * R_0)
         return temperature
-    
+
     def measureNTC_44006(self, measRange, measResolution):
         """Calculate temperature from NTC thermistor resistance using Steinhart-Hart equation."""
         self.configRes2W(measRange, measResolution)
@@ -184,6 +148,9 @@ class Keithley2000:
         temperature_kelvin = 1 / inv_temp
         temperature_celsius = temperature_kelvin - 273.15
         return temperature_celsius
+
+    def close(self):
+        self.device.close()
 
     def getConfig(self):
         config = self.device.query("FUNC?")
