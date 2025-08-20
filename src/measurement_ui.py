@@ -120,6 +120,15 @@ class KeithleyCustomTkinterGUI:
             channel: [] for channel in range(1, self.number_of_channels + 1)
         }
         self.times = []
+        self.clear_button = ctk.CTkButton(
+            self.bottom_frame,
+            text="Clear Chart",
+            command=self.clear_chart,
+            width=20,
+            fg_color="#ff0000",
+            text_color=self.default_button_text_color,
+        )
+        self.clear_button.grid(row=0, column=4, padx=5, pady=5)
 
     def create_instrument_controls(self, master):
         # Add a dropdown menu for device type selection
@@ -162,16 +171,6 @@ class KeithleyCustomTkinterGUI:
         )
 
         self.connect_button.grid(row=1, column=0, padx=5, pady=5)
-
-        self.clear_button = ctk.CTkButton(
-            self.top_left_frame,
-            text="Clear Chart",
-            command=self.clear_chart,
-            width=20,
-            fg_color=self.default_button_fg_color,
-            text_color=self.default_button_text_color,
-        )
-        self.clear_button.grid(row=1, column=1, padx=5, pady=5)
 
         self.measure_button = ctk.CTkButton(
             self.top_left_frame,
