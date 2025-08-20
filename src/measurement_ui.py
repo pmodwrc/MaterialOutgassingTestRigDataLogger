@@ -122,30 +122,9 @@ class KeithleyCustomTkinterGUI:
         self.times = []
 
     def create_instrument_controls(self, master):
-        self.label = ctk.CTkLabel(self.top_left_frame, text="Select Instrument:")
-        self.label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
-
-        self.instrument_var = ctk.StringVar(master)
-        self.instrument_var.set(self.instruments[0] if self.instruments else "None")
-
-        self.instrument_menu = ctk.CTkOptionMenu(
-            self.top_left_frame,
-            variable=self.instrument_var,
-            values=self.instruments,
-            command=self.on_instrument_change,
-            fg_color=self.default_button_fg_color,
-            text_color=self.default_button_text_color,
-        )
-        self.instrument_menu.grid(row=0, column=1, padx=5, pady=5, sticky="w")
-        self.connect_button = ctk.CTkButton(
-            self.top_left_frame,
-            text="Connect",
-            command=self.connect_instrument,
-            width=15,
-            fg_color=self.default_button_fg_color,
-            text_color=self.default_button_text_color,
-        )
         # Add a dropdown menu for device type selection
+        self.label = ctk.CTkLabel(self.top_left_frame, text="Select Instrument Model:")
+        self.label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
         device_types = ["Keithley2000", "KeysightDAQ970A"]
         self.device_type_var = ctk.StringVar(value=device_types[0])
         self.device_type_menu = ctk.CTkOptionMenu(
@@ -155,7 +134,33 @@ class KeithleyCustomTkinterGUI:
             fg_color=self.default_button_fg_color,
             text_color=self.default_button_text_color,
         )
-        self.device_type_menu.grid(row=0, column=2, padx=5, pady=5, sticky="w")
+        self.device_type_menu.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+
+        # Instrument address selection
+        self.label = ctk.CTkLabel(
+            self.top_left_frame, text="Select Instrument Address:"
+        )
+        self.label.grid(row=0, column=2, padx=5, pady=5, sticky="w")
+        self.instrument_var = ctk.StringVar(master)
+        self.instrument_var.set(self.instruments[0] if self.instruments else "None")
+        self.instrument_menu = ctk.CTkOptionMenu(
+            self.top_left_frame,
+            variable=self.instrument_var,
+            values=self.instruments,
+            command=self.on_instrument_change,
+            fg_color=self.default_button_fg_color,
+            text_color=self.default_button_text_color,
+        )
+        self.instrument_menu.grid(row=0, column=3, padx=5, pady=5, sticky="w")
+        self.connect_button = ctk.CTkButton(
+            self.top_left_frame,
+            text="Connect",
+            command=self.connect_instrument,
+            width=15,
+            fg_color=self.default_button_fg_color,
+            text_color=self.default_button_text_color,
+        )
+
         self.connect_button.grid(row=1, column=0, padx=5, pady=5)
 
         self.clear_button = ctk.CTkButton(

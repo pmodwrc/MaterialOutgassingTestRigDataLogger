@@ -92,6 +92,7 @@ class KeysightDAQ970A:
         Arguments:
         measRange      -- float measurement range [0.1, 1, 10, 100, 1000]
         measResolution -- int measurement resolution in digit[4,5,6,7]"""
+        self.device.timeout = 10000  # Set timeout to 10 seconds
         command = f"CONF:RES (@{channel})"
         self.device.write(command)
 
