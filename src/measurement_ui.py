@@ -19,7 +19,9 @@ class KeithleyCustomTkinterGUI:
         self.master = master
         self.num_channels = num_channels
         self.channel_configs = {}
-        self.config_file = ""
+        self.config_file = "channel_configs_default.csv"
+        self.config_file_path = ""
+        self.config_file_change_flag = False
         self.interval = interval
         self.rm = pyvisa.ResourceManager()
         self.instruments = self.get_instruments()
@@ -28,9 +30,9 @@ class KeithleyCustomTkinterGUI:
         # Define default button colors
         self.default_button_fg_color = "#3b8ed0"
         self.default_button_text_color = "white"
-        self.default_grid_color = "#f1f1f1"
+        self.default_grid_color = "#f7f7f7"
         master.configure(bg="white")
-        
+
         self.create_frames(master)
         self.create_widgets(master)
 
@@ -177,7 +179,7 @@ class KeithleyCustomTkinterGUI:
         """Create controls for each channel in the middle right frame."""
         channel_frame = self.middle_right_frame
         # channel_frame.pack()
-        self.load_channel_configs()
+        self.load_channel_configs(self.config_file)
         for channel in range(1, self.num_channels + 1):
             active = False
             config = "None"
@@ -228,23 +230,21 @@ class KeithleyCustomTkinterGUI:
             for f in os.listdir(os.path.dirname(os.path.abspath(__file__)))
             if f.startswith("channel_configs") and f.endswith(".csv")
         ]
-        self.selected_config_var = ctk.StringVar(
-            value=os.path.basename(self.config_file)
-        )
+        self.config_file_var = ctk.StringVar(value=os.path.basename(self.config_file))
         config_menu = ctk.CTkOptionMenu(
             channel_frame,
-            variable=self.selected_config_var,
+            variable=self.config_file_var,
             values=config_files,
             fg_color=self.default_button_fg_color,
             text_color=self.default_button_text_color,
-            command=self.on_config_file_change,
+            command=lambda value: self.on_config_file_change(value),
         )
         config_menu.grid(
             row=self.num_channels,
             column=0,
             columnspan=3,
             padx=5,
-            pady=(10, 5),
+            pady=(10, 2),
             sticky="ew",
         )
         # Add "Open Channel Config CSV" button at the bottom of the channel controls
@@ -262,34 +262,35 @@ class KeithleyCustomTkinterGUI:
             fg_color=self.default_button_fg_color,
             text_color=self.default_button_text_color,
         )
-        # Place the "Open Channel Config CSV" button at the bottom of the channel controls
         open_config_button.grid(
             row=self.num_channels + 1,
             column=0,
             columnspan=3,
             padx=5,
-            pady=5,
+            pady=2,
             sticky="ew",
         )
 
-    def on_config_file_change(self, selected_file):
+    def on_config_file_change(self, config_file):
         # Set new config file path
-        self.config_file = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), selected_file
+        self.config_file_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), config_file
         )
+        self.config_file = config_file
         # Destroy and rebuild the window with new config
         for widget in self.middle_right_frame.winfo_children():
             widget.destroy()
+        self.config_file_change_flag = False
         self.create_channel_controls()
 
-    def load_channel_configs(self):
+    def load_channel_configs(self, config_file):
         # Try to load channel config from CSV
-        self.config_file = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "channel_configs.csv"
+        self.config_file_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), config_file
         )
         self.channel_configs = {}
-        if os.path.exists(self.config_file):
-            with open(self.config_file, mode="r", newline="") as file:
+        if os.path.exists(self.config_file_path):
+            with open(self.config_file_path, mode="r", newline="") as file:
                 reader = csv.DictReader(file)
                 for row in reader:
                     try:
