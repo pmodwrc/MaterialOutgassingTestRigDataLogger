@@ -14,15 +14,15 @@ import os
 class KeithleyCustomTkinterGUI:
     """This is the ui for the Material Outgassing Test Rig Data Logger."""
 
-    def __init__(self, master, num_channels=20, interval=1):
+    def __init__(self, master):
         master.title("measurement ui")
         self.master = master
-        self.num_channels = num_channels
+        self.number_of_channels = 20
         self.channel_configs = {}
         self.config_file = "channel_configs_default.csv"
         self.config_file_path = ""
         self.config_file_change_flag = False
-        self.interval = interval
+        self.interval = 1
         self.rm = pyvisa.ResourceManager()
         self.instruments = self.get_instruments()
         self.selected_instrument = None
@@ -115,7 +115,9 @@ class KeithleyCustomTkinterGUI:
         self.result_label = ctk.CTkLabel(self.bottom_frame, text="", width=80)
         self.result_label.grid(row=0, column=2, columnspan=2, padx=5, pady=5)
         self.is_measuring = False
-        self.measurements = {channel: [] for channel in range(1, self.num_channels + 1)}
+        self.measurements = {
+            channel: [] for channel in range(1, self.number_of_channels + 1)
+        }
         self.times = []
 
     def create_instrument_controls(self, master):
@@ -180,7 +182,7 @@ class KeithleyCustomTkinterGUI:
         channel_frame = self.middle_right_frame
         # channel_frame.pack()
         self.load_channel_configs(self.config_file)
-        for channel in range(1, self.num_channels + 1):
+        for channel in range(1, self.number_of_channels + 1):
             active = False
             config = "None"
             name = "channel_name"
@@ -240,7 +242,7 @@ class KeithleyCustomTkinterGUI:
             command=lambda value: self.on_config_file_change(value),
         )
         config_menu.grid(
-            row=self.num_channels,
+            row=self.number_of_channels,
             column=0,
             columnspan=3,
             padx=5,
@@ -252,8 +254,8 @@ class KeithleyCustomTkinterGUI:
             channel_frame,
             text="Open Channel Config CSV",
             command=lambda: (
-                os.startfile(self.config_file)
-                if os.path.exists(self.config_file)
+                os.startfile(self.config_file_path)
+                if os.path.exists(self.config_file_path)
                 else messagebox.showwarning(
                     "File Not Found", "Channel config CSV not found."
                 )
@@ -263,7 +265,7 @@ class KeithleyCustomTkinterGUI:
             text_color=self.default_button_text_color,
         )
         open_config_button.grid(
-            row=self.num_channels + 1,
+            row=self.number_of_channels + 1,
             column=0,
             columnspan=3,
             padx=5,
@@ -303,6 +305,11 @@ class KeithleyCustomTkinterGUI:
                         }
                     except Exception:
                         continue
+        self.number_of_channels = max(self.channel_configs.keys())
+        print(
+            f"Loaded {self.number_of_channels} channel configurations from {config_file}"
+        )
+        return
 
     def update_connect_button(self, button):
         """Change the button color to green to indicate a successful connection."""
@@ -345,7 +352,7 @@ class KeithleyCustomTkinterGUI:
         while self.is_measuring:
             full_timestamp = datetime.now()
             self.times.append(full_timestamp)
-            for channel in range(1, self.num_channels + 1):
+            for channel in range(1, self.number_of_channels + 1):
                 if self.channel_vars[channel].get():  # if channel is selected
                     config = self.channel_configs[channel].get()
                     measurement = self.keithley.measureChanel(config, channel, 10, 5)
@@ -363,7 +370,7 @@ class KeithleyCustomTkinterGUI:
             self.ax.set_xlabel("Time (HH:MM:SS)")
             self.ax.set_ylabel("Value")
             # Plot data for each selected channel
-            for channel in range(1, self.num_channels + 1):
+            for channel in range(1, self.number_of_channels + 1):
                 if (
                     self.channel_vars[channel].get()
                     and len(self.measurements[channel]) > 0
@@ -377,7 +384,7 @@ class KeithleyCustomTkinterGUI:
                     )
             if any(
                 self.channel_vars[channel].get()
-                for channel in range(1, self.num_channels + 1)
+                for channel in range(1, self.number_of_channels + 1)
             ):
                 self.ax.legend()
             self.ax.xaxis.set_major_formatter(
@@ -388,7 +395,7 @@ class KeithleyCustomTkinterGUI:
             self.canvas.draw()
             latest_measurements = [
                 (self.measurements[channel][-1] if self.measurements[channel] else None)
-                for channel in range(1, self.num_channels + 1)
+                for channel in range(1, self.number_of_channels + 1)
             ]
             self.result_label.configure(
                 text=f"Latest Measurements: {latest_measurements}"
@@ -412,7 +419,9 @@ class KeithleyCustomTkinterGUI:
 
     def clear_chart(self):
         # Clear measurements and reset plot
-        self.measurements = {channel: [] for channel in range(1, self.num_channels + 1)}
+        self.measurements = {
+            channel: [] for channel in range(1, self.number_of_channels + 1)
+        }
         self.times = []
         self.ax.clear()
         self.ax.set_title("Measurements Over Time")
@@ -440,7 +449,7 @@ class KeithleyCustomTkinterGUI:
                 writer = csv.writer(file)
                 # Write header
                 header = ["Timestamp"] + [
-                    f"CH{channel}" for channel in range(1, self.num_channels + 1)
+                    f"CH{channel}" for channel in range(1, self.number_of_channels + 1)
                 ]
                 writer.writerow(header)
 
@@ -462,7 +471,7 @@ class KeithleyCustomTkinterGUI:
                             if i < len(self.measurements[channel])
                             else ""
                         )
-                        for channel in range(1, self.num_channels + 1)
+                        for channel in range(1, self.number_of_channels + 1)
                     ]
                     writer.writerow(row)
 
