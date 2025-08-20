@@ -1,5 +1,5 @@
-import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+import customtkinter as ctk
+from tkinter import messagebox, filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.ticker import FuncFormatter
 import matplotlib.pyplot as plt
@@ -8,18 +8,29 @@ import time
 from datetime import datetime
 import csv
 from Keithley2000 import Keithley2000
+import os
 
 
-class KeithleyGUI:
+class KeithleyCustomTkinterGUI:
+    """This is the ui for the Material Outgassing Test Rig Data Logger."""
+
     def __init__(self, master, num_channels=20, interval=1):
+        master.title("measurement ui")
         self.master = master
         self.num_channels = num_channels
+        self.channel_configs = {}
+        self.config_file = ""
         self.interval = interval
         self.rm = pyvisa.ResourceManager()
         self.instruments = self.get_instruments()
         self.selected_instrument = None
         self.keithley = None
-
+        # Define default button colors
+        self.default_button_fg_color = "#3b8ed0"
+        self.default_button_text_color = "white"
+        self.default_grid_color = "#f1f1f1"
+        master.configure(bg="white")
+        
         self.create_frames(master)
         self.create_widgets(master)
 
@@ -33,11 +44,21 @@ class KeithleyGUI:
 
     def create_frames(self, master):
         """Create the main frames for the GUI."""
-        self.top_left_frame = tk.Frame(master)
-        self.top_right_frame = tk.Frame(master)
-        self.middle_left_frame = tk.Frame(master)
-        self.middle_right_frame = tk.Frame(master)
-        self.bottom_frame = tk.Frame(master)
+        self.top_left_frame = ctk.CTkFrame(
+            master, corner_radius=5, fg_color=self.default_grid_color
+        )
+        self.top_right_frame = ctk.CTkFrame(
+            master, corner_radius=5, fg_color=self.default_grid_color
+        )
+        self.middle_left_frame = ctk.CTkFrame(
+            master, corner_radius=5, fg_color=self.default_grid_color
+        )
+        self.middle_right_frame = ctk.CTkFrame(
+            master, corner_radius=5, fg_color=self.default_grid_color
+        )
+        self.bottom_frame = ctk.CTkFrame(
+            master, corner_radius=5, fg_color=self.default_grid_color
+        )
 
         self.top_left_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         self.top_right_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
@@ -50,49 +71,7 @@ class KeithleyGUI:
     def create_widgets(self, master):
         """Create the widgets for the GUI."""
         # Instrument selection and connection (top left)
-        self.label = tk.Label(self.top_left_frame, text="Select Instrument:")
-        self.label.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
-
-        self.instrument_var = tk.StringVar(master)
-        self.instrument_var.set(self.instruments[0] if self.instruments else "None")
-
-        self.instrument_menu = tk.OptionMenu(
-            self.top_left_frame,
-            self.instrument_var,
-            *self.instruments,
-            command=self.on_instrument_change,
-        )
-        self.instrument_menu.grid(row=0, column=1, padx=5, pady=5, sticky=tk.W)
-
-        self.connect_button = tk.Button(
-            self.top_left_frame,
-            text="Connect",
-            command=self.connect_instrument,
-            width=15,
-        )
-        self.connect_button.grid(row=1, column=0, padx=5, pady=5)
-
-        self.clear_button = tk.Button(
-            self.top_left_frame, text="Clear Chart", command=self.clear_chart, width=20
-        )
-        self.clear_button.grid(row=1, column=1, padx=5, pady=5)
-
-        self.measure_button = tk.Button(
-            self.top_left_frame,
-            text="Start Measurement",
-            command=self.start_measurement,
-            width=20,
-        )
-        self.measure_button.grid(row=1, column=2, padx=5, pady=5)
-
-        self.stop_button = tk.Button(
-            self.top_left_frame,
-            text="Stop Measurement",
-            command=self.stop_measurement,
-            state=tk.DISABLED,
-            width=20,
-        )
-        self.stop_button.grid(row=1, column=3, padx=5, pady=5)
+        self.create_instrument_controls(master)
 
         # Channel controls (middle right)
         self.channel_configs = {}
@@ -107,45 +86,115 @@ class KeithleyGUI:
         self.ax.set_xlabel("Time (HH:MM:SS)")
         self.ax.set_ylabel("Value")
 
-        # Embed the figure in the Tkinter canvas
+        # Embed the figure in the CustomTkinter canvas
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.middle_left_frame)
         self.canvas.draw()
-        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.canvas.get_tk_widget().pack(side="top", fill="both", expand=True)
 
         # Save buttons (bottom)
-        self.save_chart_button = tk.Button(
+        self.save_chart_button = ctk.CTkButton(
             self.bottom_frame,
             text="Save Chart as PNG",
             command=self.save_chart_as_png,
             width=20,
+            fg_color=self.default_button_fg_color,
+            text_color=self.default_button_text_color,
         )
         self.save_chart_button.grid(row=0, column=0, padx=5, pady=5)
-        self.save_csv_button = tk.Button(
+        self.save_csv_button = ctk.CTkButton(
             self.bottom_frame,
             text="Save Measurements as CSV",
             command=self.save_measurements_as_csv,
             width=20,
+            fg_color=self.default_button_fg_color,
+            text_color=self.default_button_text_color,
         )
         self.save_csv_button.grid(row=0, column=1, padx=5, pady=5)
-        self.result_label = tk.Label(self.bottom_frame, text="", width=80)
+        self.result_label = ctk.CTkLabel(self.bottom_frame, text="", width=80)
         self.result_label.grid(row=0, column=2, columnspan=2, padx=5, pady=5)
         self.is_measuring = False
         self.measurements = {channel: [] for channel in range(1, self.num_channels + 1)}
         self.times = []
 
+    def create_instrument_controls(self, master):
+        self.label = ctk.CTkLabel(self.top_left_frame, text="Select Instrument:")
+        self.label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
+
+        self.instrument_var = ctk.StringVar(master)
+        self.instrument_var.set(self.instruments[0] if self.instruments else "None")
+
+        self.instrument_menu = ctk.CTkOptionMenu(
+            self.top_left_frame,
+            variable=self.instrument_var,
+            values=self.instruments,
+            command=self.on_instrument_change,
+            fg_color=self.default_button_fg_color,
+            text_color=self.default_button_text_color,
+        )
+        self.instrument_menu.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+        self.connect_button = ctk.CTkButton(
+            self.top_left_frame,
+            text="Connect",
+            command=self.connect_instrument,
+            width=15,
+            fg_color=self.default_button_fg_color,
+            text_color=self.default_button_text_color,
+        )
+        self.connect_button.grid(row=1, column=0, padx=5, pady=5)
+
+        self.clear_button = ctk.CTkButton(
+            self.top_left_frame,
+            text="Clear Chart",
+            command=self.clear_chart,
+            width=20,
+            fg_color=self.default_button_fg_color,
+            text_color=self.default_button_text_color,
+        )
+        self.clear_button.grid(row=1, column=1, padx=5, pady=5)
+
+        self.measure_button = ctk.CTkButton(
+            self.top_left_frame,
+            text="Start Measurement",
+            command=self.start_measurement,
+            width=20,
+            fg_color=self.default_button_fg_color,
+            text_color=self.default_button_text_color,
+        )
+        self.measure_button.grid(row=1, column=2, padx=5, pady=5)
+
+        self.stop_button = ctk.CTkButton(
+            self.top_left_frame,
+            text="Stop Measurement",
+            command=self.stop_measurement,
+            state="disabled",
+            width=20,
+            fg_color=self.default_button_fg_color,
+            text_color=self.default_button_text_color,
+        )
+        self.stop_button.grid(row=1, column=3, padx=5, pady=5)
+
     def create_channel_controls(self):
         """Create controls for each channel in the middle right frame."""
-        channel_frame = tk.Frame(self.middle_right_frame)
-        channel_frame.pack()
-
-        for channel in range(
-            1, self.num_channels + 1
-        ):  # Create controls for each channel
-            var = tk.BooleanVar(value=True)
-            checkbox = tk.Checkbutton(channel_frame, text=f"CH{channel}", variable=var)
-            checkbox.grid(row=channel - 1, column=0, padx=5, pady=2, sticky=tk.W)
+        channel_frame = self.middle_right_frame
+        # channel_frame.pack()
+        self.load_channel_configs()
+        for channel in range(1, self.num_channels + 1):
+            active = False
+            config = "None"
+            name = "channel_name"
+            if channel in self.channel_configs:
+                print(
+                    f"Channel {channel} settings found in config: {self.channel_configs[channel]}"
+                )
+                active = self.channel_configs[channel]["active"]
+                config = self.channel_configs[channel]["config"]
+            print(f"Channel {channel} settings: {active}, {config}")
+            var = ctk.BooleanVar(value=active)
+            checkbox = ctk.CTkCheckBox(channel_frame, text=f"CH{channel}", variable=var)
+            # Add extra padding only to the first channel
+            pady_val = (5, 2) if channel == 1 else 2
+            checkbox.grid(row=channel - 1, column=0, padx=5, pady=pady_val, sticky="w")
             self.channel_vars[channel] = var
-
             options = [
                 "Voltage",
                 "Current",
@@ -155,24 +204,116 @@ class KeithleyGUI:
                 "PT100",
                 "Frequency",
             ]
-            config_var = tk.StringVar(value="Voltage")
-            config_menu = tk.OptionMenu(channel_frame, config_var, *options)
-            config_menu.grid(row=channel - 1, column=1, padx=5, pady=2, sticky=tk.W)
+            config_var = ctk.StringVar(value=config)
+            config_menu = ctk.CTkOptionMenu(
+                channel_frame,
+                variable=config_var,
+                values=options,
+                fg_color=self.default_button_fg_color,
+                text_color=self.default_button_text_color,
+            )
+            config_menu.grid(
+                row=channel - 1, column=1, padx=5, pady=pady_val, sticky=ctk.W
+            )
             self.channel_configs[channel] = config_var
-
-            name_entry = tk.Entry(channel_frame, width=20)
-            name_entry.grid(row=channel - 1, column=2, padx=5, pady=2, sticky=tk.W)
+            name_entry = ctk.CTkEntry(channel_frame, width=100)
+            name_entry.insert(0, name)
+            name_entry.grid(
+                row=channel - 1, column=2, padx=5, pady=pady_val, sticky=ctk.W
+            )
             self.channel_names[channel] = name_entry
+        # Add a dropdown menu to select config files in the folder
+        config_files = [
+            f
+            for f in os.listdir(os.path.dirname(os.path.abspath(__file__)))
+            if f.startswith("channel_configs") and f.endswith(".csv")
+        ]
+        self.selected_config_var = ctk.StringVar(
+            value=os.path.basename(self.config_file)
+        )
+        config_menu = ctk.CTkOptionMenu(
+            channel_frame,
+            variable=self.selected_config_var,
+            values=config_files,
+            fg_color=self.default_button_fg_color,
+            text_color=self.default_button_text_color,
+            command=self.on_config_file_change,
+        )
+        config_menu.grid(
+            row=self.num_channels,
+            column=0,
+            columnspan=3,
+            padx=5,
+            pady=(10, 5),
+            sticky="ew",
+        )
+        # Add "Open Channel Config CSV" button at the bottom of the channel controls
+        open_config_button = ctk.CTkButton(
+            channel_frame,
+            text="Open Channel Config CSV",
+            command=lambda: (
+                os.startfile(self.config_file)
+                if os.path.exists(self.config_file)
+                else messagebox.showwarning(
+                    "File Not Found", "Channel config CSV not found."
+                )
+            ),
+            width=20,
+            fg_color=self.default_button_fg_color,
+            text_color=self.default_button_text_color,
+        )
+        # Place the "Open Channel Config CSV" button at the bottom of the channel controls
+        open_config_button.grid(
+            row=self.num_channels + 1,
+            column=0,
+            columnspan=3,
+            padx=5,
+            pady=5,
+            sticky="ew",
+        )
 
-    def update_connect_button_color(self, button):
+    def on_config_file_change(self, selected_file):
+        # Set new config file path
+        self.config_file = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), selected_file
+        )
+        # Destroy and rebuild the window with new config
+        for widget in self.middle_right_frame.winfo_children():
+            widget.destroy()
+        self.create_channel_controls()
+
+    def load_channel_configs(self):
+        # Try to load channel config from CSV
+        self.config_file = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "channel_configs.csv"
+        )
+        self.channel_configs = {}
+        if os.path.exists(self.config_file):
+            with open(self.config_file, mode="r", newline="") as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    try:
+                        ch = int(row.get("channel_nr"))
+                        active = row.get("active", "False")
+                        config = row.get("configuration", "None")
+                        self.channel_configs[ch] = {
+                            "active": active,
+                            "config": config,
+                        }
+                    except Exception:
+                        continue
+
+    def update_connect_button(self, button):
         """Change the button color to green to indicate a successful connection."""
-        button.config(bg="green", fg="white")
+        button.configure(fg_color="green", text_color="white")
+        button.configure(text="Connected")
 
     def on_instrument_change(self, _value):
         """Reset Connect button color when a new instrument is selected."""
         # Switch back to white to indicate not connected after selection change
         if hasattr(self, "connect_button"):
-            self.connect_button.config(bg="white", fg="black")
+            self.connect_button.configure(fg_color="#3b8ed0", text_color="white")
+            self.connect_button.configure(text="Connect")
         # Optionally clear any existing instrument handle (kept minimal per request)
         # self.instrument = None
         # self.keithley = None
@@ -187,7 +328,7 @@ class KeithleyGUI:
                     "Connected",
                     f"Connected to {self.selected_instrument}\nIDN: {idn_response}",
                 )
-                self.update_connect_button_color(self.connect_button)
+                self.update_connect_button(self.connect_button)
                 self.keithley = Keithley2000(self.instrument)
                 # Set a longer timeout for measurements (10 seconds)
                 self.instrument.timeout = 10000
@@ -248,23 +389,25 @@ class KeithleyGUI:
                 (self.measurements[channel][-1] if self.measurements[channel] else None)
                 for channel in range(1, self.num_channels + 1)
             ]
-            self.result_label.config(text=f"Latest Measurements: {latest_measurements}")
+            self.result_label.configure(
+                text=f"Latest Measurements: {latest_measurements}"
+            )
             self.master.update()
             time.sleep(self.interval)
 
     def start_measurement(self):
         if hasattr(self, "instrument"):
             self.is_measuring = True
-            self.stop_button.config(state=tk.NORMAL)
-            self.measure_button.config(state=tk.DISABLED)
+            self.stop_button.configure(state=ctk.NORMAL)
+            self.measure_button.configure(state=ctk.DISABLED)
             self.measure_and_plot()
         else:
             messagebox.showwarning("Warning", "No instrument connected.")
 
     def stop_measurement(self):
         self.is_measuring = False
-        self.stop_button.config(state=tk.DISABLED)
-        self.measure_button.config(state=tk.NORMAL)
+        self.stop_button.configure(state=ctk.DISABLED)
+        self.measure_button.configure(state=ctk.NORMAL)
 
     def clear_chart(self):
         # Clear measurements and reset plot

@@ -1,0 +1,10 @@
+channel_nr,configuration,active
+1,Resistance,TRUE
+2,Voltage,TRUE
+3,Current,FALSE
+4,NTC_44006,FALSE
+5,NTC_44007,FALSE
+7,Frequency,TRUE
+8,Frequency,FALSE
+9,Frequency,FALSE
+10,Frequency,FALSE
