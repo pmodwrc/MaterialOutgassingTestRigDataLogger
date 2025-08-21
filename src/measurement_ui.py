@@ -32,6 +32,8 @@ class KeithleyCustomTkinterGUI:
         self.default_button_fg_color = "#3b8ed0"
         self.default_button_text_color = "white"
         self.default_grid_color = "#f7f7f7"
+        self.default_dropdown_fg_color = "#f0f0f0"
+        self.default_dropdown_text_color = "black"
         master.configure(bg="white")
 
         self.create_frames(master)
@@ -142,6 +144,8 @@ class KeithleyCustomTkinterGUI:
             values=device_types,
             fg_color=self.default_button_fg_color,
             text_color=self.default_button_text_color,
+            dropdown_fg_color=self.default_dropdown_fg_color,
+            dropdown_text_color=self.default_dropdown_text_color,
         )
         self.device_type_menu.grid(row=0, column=1, padx=5, pady=5, sticky="w")
 
@@ -159,6 +163,8 @@ class KeithleyCustomTkinterGUI:
             command=self.on_instrument_change,
             fg_color=self.default_button_fg_color,
             text_color=self.default_button_text_color,
+            dropdown_fg_color=self.default_dropdown_fg_color,
+            dropdown_text_color=self.default_dropdown_text_color,
         )
         self.instrument_menu.grid(row=0, column=3, padx=5, pady=5, sticky="w")
         self.connect_button = ctk.CTkButton(
@@ -231,6 +237,8 @@ class KeithleyCustomTkinterGUI:
                 values=options,
                 fg_color=self.default_button_fg_color,
                 text_color=self.default_button_text_color,
+                dropdown_fg_color=self.default_dropdown_fg_color,
+                dropdown_text_color=self.default_dropdown_text_color,
             )
             config_menu.grid(
                 row=channel - 1, column=1, padx=5, pady=pady_val, sticky=ctk.W
@@ -255,6 +263,8 @@ class KeithleyCustomTkinterGUI:
             values=config_files,
             fg_color=self.default_button_fg_color,
             text_color=self.default_button_text_color,
+            dropdown_fg_color=self.default_dropdown_fg_color,
+            dropdown_text_color=self.default_dropdown_text_color,
             command=lambda value: self.on_config_file_change(value),
         )
         config_menu.grid(
