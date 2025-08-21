@@ -17,7 +17,8 @@ from measurement_web_ui import create_app
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(debug=True)
+    # Expose on LAN; use your PC's IP: http://<your-ip>:5000
+    app.run(host="0.0.0.0", port=5000, debug=False)
 
     # root = tk.Tk()
     # root.protocol(
