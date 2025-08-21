@@ -16,8 +16,8 @@ from measurement_web_ui import create_app
 
 
 if __name__ == "__main__":
-    flask_app = create_app()
-    flask_app.run(debug=True)
+    app = create_app()
+    app.run(debug=True)
 
     # root = tk.Tk()
     # root.protocol(
