@@ -50,14 +50,20 @@ def dashboard():
 
     state = controller.get_state()
     instruments = controller.list_instruments()
+    instrument = controller.instrument
+    device_types = controller.device_types
     config_files = controller.list_config_files()
 
     return render_template(
         "dashboard.html",
         state=state,
         instruments=instruments,
+        instrument=instrument,
+        device_types=device_types,
         channel_options=CHANNEL_OPTIONS,
         config_files=config_files,
+        selected_device_type=controller.device_type,
+        selected_address=controller.instrument_addr,
     )
 
 
@@ -76,3 +82,19 @@ def export_csv():
         as_attachment=True,
         download_name="measurements.csv",
     )
+
+
+@views.route("/selection", methods=["POST"])
+def selection_changed():
+    data = request.get_json(silent=True) or request.form
+    new_device_type = data.get("device_type") or controller.device_type
+    new_addr = data.get("instrument_address") or controller.instrument_addr
+    if (
+        new_device_type != controller.device_type
+        or new_addr != controller.instrument_addr
+    ):
+        # Close current instrument and update selection
+        controller.close()
+        controller.device_type = new_device_type
+        controller.instrument_addr = new_addr
+    return ("", 204)

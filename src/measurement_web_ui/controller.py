@@ -36,6 +36,7 @@ class MeasurementController:
         self.instrument = None
         self.instrument_addr: Optional[str] = None
         self.device_type: str = "Keithley2000"
+        self.device_types: List[str] = ["Keithley2000", "KeysightDAQ970A"]
 
         self.config_file: str = "channel_configs_default.csv"
         self.config_file_path: str = os.path.join(

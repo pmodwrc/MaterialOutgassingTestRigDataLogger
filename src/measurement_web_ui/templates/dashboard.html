@@ -11,18 +11,56 @@
     <form method="post" class="form-inline">
       <label class="mr-2" for="device_type">Model</label>
       <select class="mr-2" name="device_type" id="device_type">
-        <option value="Keithley2000">Keithley2000</option>
-        <option value="KeysightDAQ970A">KeysightDAQ970A</option>
+        {% for device_type in device_types %}
+        <option value="{{ device_type }}" {% if selected_device_type == device_type %}selected{% endif %}>{{ device_type }}</option>
+        {% endfor %}
       </select>
       <label class="mr-2" for="instrument_address">Address</label>
       <select class="mr-2" name="instrument_address" id="instrument_address">
         {% for addr in instruments %}
-        <option value="{{ addr }}">{{ addr }}</option>
+        <option value="{{ addr }}" {% if selected_address == addr %}selected{% endif %}>{{ addr }}</option>
         {% endfor %}
       </select>
-      <button name="action" value="connect" class="btn btn-primary">Connect</button>
+      <button id="connectBtn" name="action" value="connect" type="submit" class="btn {% if instrument %}btn-success{% else %}btn-primary{% endif %}" {% if instrument %}disabled{% endif %}>
+        {% if instrument %}Connected{% else %}Connect{% endif %}
+      </button>
     </form>
   </section>
+
+  <script>
+    const modelSel = document.getElementById('device_type');
+    const addrSel = document.getElementById('instrument_address');
+    const connectBtn = document.getElementById('connectBtn');
+
+    function markDisconnected() {
+      if (connectBtn) {
+        connectBtn.removeAttribute('disabled');
+        connectBtn.classList.remove('btn-success');
+        connectBtn.classList.add('btn-primary');
+        connectBtn.textContent = 'Connect';
+        // ensure it posts the connect action
+        connectBtn.name = 'action';
+        connectBtn.value = 'connect';
+        connectBtn.type = 'submit';
+      }
+    }
+
+    function postSelection() {
+      // Immediately flip UI to disconnected so the next click works without waiting
+      markDisconnected();
+      fetch('{{ url_for('views.selection_changed') }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          device_type: modelSel.value,
+          instrument_address: addrSel.value
+        })
+      });
+    }
+
+    modelSel && modelSel.addEventListener('change', postSelection);
+    addrSel && addrSel.addEventListener('change', postSelection);
+  </script>
 
   <!-- Measurements -->
   <section class="mb-4 p-3 border rounded">
