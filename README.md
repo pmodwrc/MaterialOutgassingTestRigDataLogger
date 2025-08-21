@@ -87,4 +87,6 @@ In order to run the data logger, you can use the following command:
 python src/main.py
 ```
 
+You can also create a shortcut to the launch_main.bat file for easier access on the Desktop. this simply executes the command above.
+
 This will start the data logger window, where you can select the instrument to use, the channels to measure, and their configurations. The data logger will continuously measure the selected channels.
