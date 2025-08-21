@@ -43,6 +43,7 @@ class KeithleyCustomTkinterGUI:
         """Retrieve available instruments using PyVISA."""
         try:
             resources = self.rm.list_resources()
+            print(f"Available instruments: {resources}")
             return [res for res in resources]
         except pyvisa.VisaIOError:
             return []

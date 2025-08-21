@@ -2,11 +2,14 @@
 
 This repository contains the software for the Material Outgassing Test Rig Data Logger. This system is designed to monitor and log various parameters during material outgassing tests.
 
+![Material Outgassing Test Rig](images/overview.png)
+
 ## Virtual Environment Setup
 
 To set up a virtual environment for this project, follow these steps:
 
 1. **Create a Virtual Python 3.10 Environment:**
+   Download python 3.10.X from the [python website](https://www.python.org/downloads/windows/)
 
    ```sh
    python -3.10 -m venv venv
@@ -51,6 +54,17 @@ To set up a virtual environment for this project, follow these steps:
    ```
 
 ## Keysight DAQ970A Setup
+
+* **Install Keysight IO** you can download the latest version of the Keysight I/O from the [Keysight website](https://www.keysight.com/us/en/lib/software-detail/computer-software/io-libraries-suite-downloads-2175637.html). This software is essential for communicating with Keysight instruments.
+  * Install "IO library" and leave everything at default settings.
+  * open the "Connection Expert" and add the Keysight instrument.
+* Once the connection is established, you can test the communication by running following command in the terminal:
+  
+    ```sh
+    python -c "import pyvisa; print(pyvisa.ResourceManager().list_resources())"
+    ```
+
+    the output should include the address of your Keysight instrument (e.g., `('USB0::0x2A8D::0x5101::MY58036432::0::INSTR',)`).
 
 * **Connect the DAQ970A to your PC:**
   * By LAN:
