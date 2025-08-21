@@ -4,3 +4,6 @@ pyvisa-py
 psutil
 zeroconf
 customtkinter
+flask
+flask-login
+flask-sqlalchemy
