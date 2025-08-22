@@ -62,45 +62,40 @@
     addrSel && addrSel.addEventListener('change', postSelection);
   </script>
 
-  <!-- Measurements -->
-  <section class="mb-4 p-3 border rounded">
-    <h3>Measurements</h3>
-    <div class="mb-2">
-      <form method="post" class="d-inline">
-        <button name="action" value="start" class="btn btn-success">Start</button>
-      </form>
-      <form method="post" class="d-inline">
+  <!-- Unified measurement + channel form -->
+  <form method="post" id="mainForm">
+    <!-- Measurements -->
+    <section class="mb-4 p-3 border rounded">
+      <h3>Measurements</h3>
+      <div class="mb-2">
+        <button name="action" value="start" id="startBtn" class="btn btn-success" {% if not instrument or not state.has_active %}disabled{% endif %}>Start</button>
         <button name="action" value="stop" class="btn btn-warning">Stop</button>
-      </form>
-      <form method="post" class="d-inline">
         <button name="action" value="clear" class="btn btn-danger">Clear</button>
-      </form>
-      <a class="btn btn-outline-secondary" href="{{ url_for('views.export_csv') }}">Save CSV</a>
-      <a class="btn btn-outline-secondary" href="{{ url_for('views.chart_png') }}" target="_blank">Open Chart</a>
-    </div>
-    <div>
-      <img src="{{ url_for('views.chart_png') }}" alt="chart" style="max-width:100%" />
-    </div>
-    <div class="mt-2">
-      <strong>Status:</strong> {{ 'Running' if state.is_measuring else 'Stopped' }}
-    </div>
-  </section>
+        <a class="btn btn-outline-secondary" href="{{ url_for('views.export_csv') }}">Save CSV</a>
+        <a class="btn btn-outline-secondary" href="{{ url_for('views.chart_png') }}" target="_blank">Open Chart</a>
+      </div>
+      <div>
+        <img src="{{ url_for('views.chart_png') }}" alt="chart" style="max-width:100%" />
+      </div>
+      <div class="mt-2">
+        <strong>Status:</strong> {{ 'Running' if state.is_measuring else 'Stopped' }}
+      </div>
+    </section>
 
-  <!-- Configure channels -->
-  <section class="mb-4 p-3 border rounded">
-    <h3>Configure channels</h3>
-    <form method="post">
+    <!-- Configure channels -->
+    <section class="mb-4 p-3 border rounded">
+      <h3>Configure channels</h3>
       <div class="table-responsive">
         <table class="table table-sm">
           <thead><tr><th>Active</th><th>Channel</th><th>Name</th><th>Config</th></tr></thead>
           <tbody>
           {% for i in range(1, state.number_of_channels + 1) %}
             <tr>
-              <td><input type="checkbox" name="channel_{{ i }}" {% if state.channel_active[i] %}checked{% endif %} /></td>
+              <td><input type="checkbox" class="ch-active" name="channel_{{ i }}" {% if state.channel_active[i] %}checked{% endif %} /></td>
               <td>CH{{ i }}</td>
               <td><input type="text" name="name_{{ i }}" value="{{ state.channel_name[i] }}"/></td>
               <td>
-                <select name="config_{{ i }}">
+                <select name="config_{{ i }}" class="cfg-select">
                   {% for opt in channel_options %}
                   <option value="{{ opt }}" {% if state.channel_config[i]==opt %}selected{% endif %}>{{ opt }}</option>
                   {% endfor %}
@@ -111,7 +106,7 @@
           </tbody>
         </table>
       </div>
-      <div class="form-inline">
+      <div class="form-inline mb-2">
         <label class="mr-2" for="config_file">Load preset</label>
         <select class="mr-2" name="config_file" id="config_file">
           {% for cfg in config_files %}
@@ -121,15 +116,32 @@
         <button name="action" value="load_config_file" class="btn btn-outline-info mr-2">Load</button>
         <button name="action" value="save_channels" class="btn btn-primary">Save Channels</button>
       </div>
-    </form>
-  </section>
+    </section>
+  </form>
 
-  <!-- Save measurements -->
+  <!-- Save measurements (export links outside form) -->
   <section class="mb-4 p-3 border rounded">
     <h3>Save measurements</h3>
     <a class="btn btn-outline-secondary" href="{{ url_for('views.export_csv') }}">Save as CSV</a>
     <a class="btn btn-outline-secondary" href="{{ url_for('views.chart_png') }}" target="_blank">Save chart (open image)</a>
   </section>
 </div>
+
+<script>
+  // Live enable/disable Start button
+  const startBtn = document.getElementById('startBtn');
+  const activeBoxes = document.querySelectorAll('.ch-active');
+  function refreshStartEnabled() {
+    const anyActive = Array.from(activeBoxes).some(cb => cb.checked);
+    const instrumentConnected = {{ 'true' if instrument else 'false' }};
+    if (instrumentConnected && anyActive) {
+      startBtn.removeAttribute('disabled');
+    } else {
+      startBtn.setAttribute('disabled', 'disabled');
+    }
+  }
+  activeBoxes.forEach(cb => cb.addEventListener('change', refreshStartEnabled));
+  refreshStartEnabled();
+</script>
 
 {% endblock %}

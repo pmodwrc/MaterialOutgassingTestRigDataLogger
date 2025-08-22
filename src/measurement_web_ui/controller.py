@@ -35,7 +35,7 @@ class MeasurementController:
         self.rm = pyvisa.ResourceManager()
         self.instrument = None
         self.instrument_addr: Optional[str] = None
-        self.device_type: str = "Keithley2000"
+        self.device_type: str = ""
         self.device_types: List[str] = ["Keithley2000", "KeysightDAQ970A"]
 
         self.config_file: str = "channel_configs_default.csv"
@@ -74,8 +74,10 @@ class MeasurementController:
         idn = inst.query("*IDN?")
         if device_type == "Keithley2000":
             self.instrument = Keithley2000(inst)
-        else:
+        elif device_type == "KeysightDAQ970A":
             self.instrument = KeysightDAQ970A(inst)
+        else:
+            return "unknown"
         # 10s timeout
         self.instrument.timeout = 10000
         # Initialize
@@ -148,11 +150,18 @@ class MeasurementController:
         ]
         return sorted(files)
 
+    def has_active_channels(self) -> bool:
+        return any(
+            self.channel_active.get(i) for i in range(1, self.number_of_channels + 1)
+        )
+
     def start(self):
         if self.is_measuring:
             return
         if not self.instrument:
             raise RuntimeError("No instrument connected")
+        if not self.has_active_channels():
+            raise RuntimeError("No active channels selected")
         self.is_measuring = True
         self._thread = threading.Thread(target=self._run_loop, daemon=True)
         self._thread.start()
@@ -203,6 +212,10 @@ class MeasurementController:
                 "channel_config": self.channel_config,
                 "channel_name": self.channel_name,
                 "number_of_channels": self.number_of_channels,
+                "has_active": any(
+                    self.channel_active.get(i)
+                    for i in range(1, self.number_of_channels + 1)
+                ),
             }
 
     def build_chart_png(self) -> bytes:

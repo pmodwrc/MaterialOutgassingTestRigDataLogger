@@ -20,7 +20,9 @@ def dashboard():
         action = request.form.get("action")
         try:
             if action == "connect":
-                device_type = request.form.get("device_type", "Keithley2000")
+                device_type = request.form.get("device_type") or next(
+                    iter(controller.device_types), None
+                )
                 address = request.form.get("instrument_address")
                 if not address:
                     flash("Please select an instrument address", "error")
@@ -28,8 +30,13 @@ def dashboard():
                     idn = controller.connect(device_type, address)
                     flash(f"Connected: {idn}", "success")
             elif action == "start":
-                controller.start()
-                flash("Measurement started", "success")
+                try:
+                    # capture any posted channel config fields (injected via JS before submit)
+                    controller.set_channels_from_form(request.form)
+                    controller.start()
+                    flash("Measurement started", "success")
+                except RuntimeError as re:
+                    flash(str(re), "error")
             elif action == "stop":
                 controller.stop()
                 flash("Measurement stopped", "success")
