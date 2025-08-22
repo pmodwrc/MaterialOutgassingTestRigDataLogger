@@ -93,43 +93,58 @@ class MeasurementController:
         self.instrument = None
 
     def load_channel_configs(self, config_file: str):
-        # compute path relative to src folder
+        """Load channel configuration from a CSV.
+
+        Expected columns: channel_nr, configuration, active, (optional) name
+        Active is interpreted case-insensitively: true/false, 1/0, yes/no, on/off.
+        Gaps in channel numbering are filled with default inactive entries so that
+        UI renders a contiguous block from 1..max_channel.
+        """
         src_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         path = os.path.join(src_dir, config_file)
         self.config_file = config_file
         self.config_file_path = path
-        ch_active = {}
-        ch_config = {}
-        ch_name = {}
+
+        # Temporary storage
+        ch_active: Dict[int, bool] = {}
+        ch_config: Dict[int, str] = {}
+        ch_name: Dict[int, str] = {}
+
         if os.path.exists(path):
             with open(path, mode="r", newline="") as f:
                 reader = csv.DictReader(f)
                 for row in reader:
                     try:
-                        ch = int(row.get("channel_nr"))
-                        ch_active[ch] = row.get("active", "False") in (
-                            "True",
-                            "true",
-                            "1",
-                            1,
-                            True,
-                        )
-                        ch_config[ch] = row.get("configuration", "None")
-                        ch_name[ch] = row.get("name", f"CH{ch}")
+                        raw_ch = row.get("channel_nr")
+                        if raw_ch is None or raw_ch == "":
+                            continue
+                        ch = int(raw_ch)
+                        raw_active = str(row.get("active", "False")).strip().lower()
+                        active_bool = raw_active in ("true", "1", "yes", "y", "on")
+                        ch_active[ch] = active_bool
+                        ch_config[ch] = row.get("configuration", "None") or "None"
+                        ch_name[ch] = row.get("name", f"CH{ch}") or f"CH{ch}"
                     except Exception:
                         continue
+        # Determine max channel even if there are gaps
         if ch_active:
-            self.number_of_channels = max(ch_active.keys())
-        # ensure dense
+            max_ch = max(ch_active.keys())
+            self.number_of_channels = max_ch
+        # Fill / update internal dicts contiguously 1..number_of_channels
         for i in range(1, self.number_of_channels + 1):
             self.channel_active[i] = ch_active.get(i, False)
-            self.channel_config[i] = ch_config.get(i, "None")
-            self.channel_name[i] = ch_name.get(i, f"CH{i}")
-        # resize measurements
-        self.measurements = {
-            i: self.measurements.get(i, [])
-            for i in range(1, self.number_of_channels + 1)
-        }
+            self.channel_config[i] = ch_config.get(
+                i, self.channel_config.get(i, "None")
+            )
+            self.channel_name[i] = ch_name.get(i, self.channel_name.get(i, f"CH{i}"))
+        # Resize measurements dict preserving existing collected data
+        for i in range(1, self.number_of_channels + 1):
+            if i not in self.measurements:
+                self.measurements[i] = []
+        # Drop measurements for channels beyond new max (unlikely shrinking case)
+        for ch in list(self.measurements.keys()):
+            if ch > self.number_of_channels:
+                del self.measurements[ch]
 
     def set_channels_from_form(self, form: dict):
         for i in range(1, self.number_of_channels + 1):

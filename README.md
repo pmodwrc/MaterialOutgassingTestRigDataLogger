@@ -68,9 +68,9 @@ To set up a virtual environment for this project, follow these steps:
 
 * **Connect the DAQ970A to your PC:**
   * By LAN:
-    * Connect it via lan and add the instrument in the Keysight Connection Expert. You should be able to see the device in the browser when searching for its [IP address](http://172.16.10.196/Index.asp)
+    Connect it via lan and add the instrument in the Keysight Connection Expert. You should be able to see the device in the browser when searching for its [IP address](http://172.16.10.196/Index.asp)
   * Via USB:
-    * Connect the USB cable from the DAQ970A to your PC. You should be able to see the device in the Keysight Connection Expert.
+    Connect the USB cable from the DAQ970A to your PC. You should be able to see the device in the Keysight Connection Expert.
 
 <!-- Download the latest python driver for the Keysight DAQ970A from the [Keysight website](https://www.keysight.com/us/en/lib/software-detail/driver/daq970-data-acquisition-system-python-instrument-drivers.html). This driver is essential for communicating with the Keysight DAQ970A instrument.
 
@@ -79,14 +79,30 @@ You should be able to see the device in the browser when searching for its [IP a
 
 [Python Programming Example](https://docs.keysight.com/kkbopen/programming-example-how-to-use-external-data-logger-elog-with-python-programming-620698733.html) -->
 
-## Run the Data Logger:**
+## Run the Data Logger
 
-In order to run the data logger, you can use the following command:
+* **Start the Data Logger:**
 
-```sh
-python src/main.py
-```
+  * In order to run the data logger, you can use the following command:
 
-You can also create a shortcut to the launch_main.bat file for easier access on the Desktop. this simply executes the command above.
+    ```sh
+    python src/main.py
+    ```
 
-This will start the data logger window, where you can select the instrument to use, the channels to measure, and their configurations. The data logger will continuously measure the selected channels.
+  * You can also create a shortcut to the launch_main.bat file for easier access on the Desktop. This simply executes the command above.
+
+* **Access the Web UI:**
+In order to see the UI you  or search for the IP address of the machine running the server.
+  * local machine:
+    you can access it via [http://localhost:5000](http://localhost:5000) or [http://127.0.0.1:5000](http://127.0.0.1:5000).
+  * Different machine in local network:
+    Access the UI from a different machine in the same network via `http://<IP_ADDRESS>:5000`, replacing `<IP_ADDRESS>` with the actual IP address of the server machine. [http://172.16.10.237:5000](http://172.16.10.237:5000)
+
+  The IP addresses are also displayed in the terminal while starting the server.
+
+* **Access the local UI:**
+  In order to see the UI you either have to uncomment the Ui part in the main.py file, and comment out the web ui part.
+  
+* **Use the Measurement UI:**
+  Once the UI is running, you can select the instrument to use, the channels to measure, and their configurations. The data logger will continuously measure the selected channels.
+  In the end you can save the measurement results to a .csv file.
