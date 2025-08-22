@@ -105,3 +105,8 @@ def selection_changed():
         controller.device_type = new_device_type
         controller.instrument_addr = new_addr
     return ("", 204)
+
+
+@views.route("/api/state")
+def api_state():
+    return controller.get_series()

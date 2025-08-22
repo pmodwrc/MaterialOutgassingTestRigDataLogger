@@ -75,7 +75,7 @@
         <a class="btn btn-outline-secondary" href="{{ url_for('views.chart_png') }}" target="_blank">Open Chart</a>
       </div>
       <div>
-        <img src="{{ url_for('views.chart_png') }}" alt="chart" style="max-width:100%" />
+        <canvas id="liveChart" style="max-width:100%;"></canvas>
       </div>
       <div class="mt-2">
         <strong>Status:</strong> {{ 'Running' if state.is_measuring else 'Stopped' }}
@@ -142,6 +142,44 @@
   }
   activeBoxes.forEach(cb => cb.addEventListener('change', refreshStartEnabled));
   refreshStartEnabled();
+
+  // Chart.js live updating chart
+  const ctx = document.getElementById('liveChart').getContext('2d');
+  const liveChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: [], datasets: [] },
+    options: {
+      animation: false,
+      responsive: true,
+      scales: { x: { title: { display: true, text: 'Time' } }, y: { title: { display: true, text: 'Value' } } },
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+  function updateChart() {
+    fetch('{{ url_for('views.api_state') }}')
+      .then(r => r.json())
+      .then(data => {
+        const times = data.times.map(t => new Date(t));
+        // Format HH:MM:SS
+        const labels = times.map(d => d.toLocaleTimeString());
+        liveChart.data.labels = labels;
+        const seriesKeys = Object.keys(data.series).sort((a,b)=>parseInt(a)-parseInt(b));
+        const palette = ['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd','#8c564b','#e377c2','#7f7f7f','#bcbd22','#17becf'];
+        liveChart.data.datasets = seriesKeys.map((ch, idx) => ({
+          label: data.names[ch] || ('CH'+ch),
+          data: data.series[ch],
+          borderColor: palette[idx % palette.length],
+          borderWidth: 1,
+          pointRadius: 0,
+          fill: false,
+          tension: 0
+        }));
+        liveChart.update();
+      })
+      .catch(()=>{});
+  }
+  setInterval(updateChart, 2000);
+  updateChart();
 </script>
 
 {% endblock %}

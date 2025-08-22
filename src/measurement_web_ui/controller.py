@@ -268,6 +268,29 @@ class MeasurementController:
             data = output.getvalue().encode("utf-8")
         return data
 
+    def get_series(self, max_points: int = 500) -> dict:
+        with self._lock:
+            # Trim to last max_points for efficiency
+            if len(self.times) > max_points:
+                times = self.times[-max_points:]
+            else:
+                times = list(self.times)
+            series = {}
+            for ch in range(1, self.number_of_channels + 1):
+                if self.channel_active.get(ch):
+                    vals = self.measurements.get(ch, [])
+                    if len(vals) > max_points:
+                        vals = vals[-max_points:]
+                    series[ch] = vals
+            return {
+                "times": [t.isoformat() for t in times],
+                "series": series,
+                "names": {
+                    ch: self.channel_name.get(ch, f"CH{ch}") for ch in series.keys()
+                },
+                "running": self.is_measuring,
+            }
+
 
 # Singleton controller for the app
 controller = MeasurementController()
