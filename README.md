@@ -8,11 +8,11 @@ This repository contains the software for the Material Outgassing Test Rig Data 
 
 To set up a virtual environment for this project, follow these steps:
 
-1. **Create a Virtual Python 3.10 Environment:**
-   Download python 3.10.X from the [python website](https://www.python.org/downloads/windows/)
+1. **Create a Virtual Python 3.10.10 Environment:**
+   Download python 3.10.10 from the [python website](https://www.python.org/downloads/windows/)
 
    ```sh
-   python -3.10 -m venv venv
+   python -3.10.10 -m venv venv
    ```
 
 2. **Activate the Virtual Environment:**
@@ -31,7 +31,7 @@ To set up a virtual environment for this project, follow these steps:
 
 [Documentation](https://www.tek.com/en/search?keywords=2000&facets=_templatename%3dmanual&sort=desc) of Keithley 2000 Multiplexer
 
-* **Install Keysight IO** you can download the latest version of the Keysight I/O from the [Keysight website](https://www.keysight.com/us/en/lib/software-detail/computer-software/io-libraries-suite-downloads-2175637.html). This software is essential for communicating with Keithley instruments.
+* **Install Keysight IO** you can download the latest version of the Keysight I/O library suite and the prerequisites from the [Keysight website](https://www.keysight.com/us/en/lib/software-detail/computer-software/io-libraries-suite-downloads-2175637.html). This software is essential for communicating with Keithley instruments.
   * Install "IO library" and leave everything at default settings.
   * open the "Connection Expert" and add the Keithley instrument.
   * Make sure to select the correct communication port (e.g., COM1, COM2, GPIB, Serial) and configure the settings according to your instrument's specifications.
@@ -43,6 +43,7 @@ To set up a virtual environment for this project, follow these steps:
     ```
 
     the output should include the address of your Keithley instrument (e.g., `('ASRL1::INSTR',)`).
+    You may need to restart your computer for the changes to take effect.
 
 * **General mode of operation:**
   The Keithley 2000 can be configured to measure different parameters such as voltage, current, and resistance, frequency, etc. In order to measure a specific channel, the script will follow this pseudo code:
@@ -96,7 +97,7 @@ In order to see the UI you  or search for the IP address of the machine running 
   * local machine:
     you can access it via [http://localhost:5000](http://localhost:5000) or [http://127.0.0.1:5000](http://127.0.0.1:5000).
   * Different machine in local network:
-    Access the UI from a different machine in the same network via `http://<IP_ADDRESS>:5000`, replacing `<IP_ADDRESS>` with the actual IP address of the server machine. [http://172.16.10.237:5000](http://172.16.10.237:5000)
+    Access the UI from a different machine in the same network via `http://<IP_ADDRESS>:5000`, replacing `<IP_ADDRESS>` with the actual IP address of the server machine. [http://172.16.10.237:5000](http://172.16.10.237:5000), [http://172.16.8.152:5000/](http://172.16.8.152:5000/)
 
   The IP addresses are also displayed in the terminal while starting the server.
 
