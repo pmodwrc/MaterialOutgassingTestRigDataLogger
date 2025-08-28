@@ -18,7 +18,7 @@ To set up a virtual environment for this project, follow these steps:
 2. **Activate the Virtual Environment:**
   
     ```sh
-    venv\Scripts\activate
+    .venv\Scripts\activate
     ```
 
 3. **Install Required Packages:**

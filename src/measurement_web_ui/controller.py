@@ -27,6 +27,7 @@ CHANNEL_OPTIONS = [
     "NTC_44007",
     "PT100",
     "Frequency",
+    "IKR020",
 ]
 
 

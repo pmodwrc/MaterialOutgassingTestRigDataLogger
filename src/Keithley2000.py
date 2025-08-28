@@ -75,6 +75,8 @@ class Keithley2000:
                 return self.measureNTC_44006(measRange, measResolution)
             elif config == "NTC_44007":
                 return self.measureNTC_44007(measRange, measResolution)
+            elif config == "IKR020":
+                return self.measureIKR020(measRange, measResolution)
             time.sleep(self.aquisitionTime)
             return self.readValue()
         except pyvisa.VisaIOError as e:
@@ -158,7 +160,7 @@ class Keithley2000:
             -A * R_0 + (A**2 * R_0**2 - 4 * B * R_0 * (R_0 - resistance)) ** 0.5
         ) / (2 * B * R_0)
         return temperature
-    
+
     def measureNTC_44006(self, measRange, measResolution):
         """Calculate temperature from NTC thermistor resistance using Steinhart-Hart equation."""
         self.configRes2W(measRange, measResolution)
@@ -184,6 +186,13 @@ class Keithley2000:
         temperature_kelvin = 1 / inv_temp
         temperature_celsius = temperature_kelvin - 273.15
         return temperature_celsius
+
+    def measureIKR020(self, measRange, measResolution):
+        """Calculate the pressure from the IKR020 sensor."""
+        self.configVoltageDC(measRange, measResolution)
+        voltage = self.readValue()
+        pressure = 5 ** (-10 * math.e ** (1.4261 * voltage))
+        return pressure
 
     def getConfig(self):
         config = self.device.query("FUNC?")
