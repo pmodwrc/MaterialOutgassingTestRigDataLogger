@@ -191,7 +191,7 @@ class Keithley2000:
         """Calculate the pressure from the IKR020 sensor."""
         self.configVoltageDC(measRange, measResolution)
         voltage = self.readValue()
-        pressure = 5 ** (-10 * math.e ** (1.4261 * voltage))
+        pressure = 9*(10**(-14))*(voltage**9.6465)
         return pressure
 
     def getConfig(self):
